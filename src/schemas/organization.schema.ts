@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const organizationRegisterSchema = z.object({
+  username: z.string(),
   name: z.string(),
   email: z.email(),
   contact_no: z.string(),
