@@ -5,6 +5,7 @@ import {
   loginSchema,
   refreshSchema,
   resetPasswordSchema,
+  verifyOtpSchema,
 } from "../schemas/auth.schema.js";
 
 export interface AuthenticatedRequest extends Request {
@@ -25,3 +26,4 @@ export type LoginBody = z.infer<typeof loginSchema>;
 export type RefreshBody = z.infer<typeof refreshSchema>;
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
+export type VerifyOtpBody = z.infer<typeof verifyOtpSchema>;
