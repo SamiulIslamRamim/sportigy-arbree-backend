@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import otpGenerator from "otp-generator";
 import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type.js";
 import { prisma } from "../config/prisma.js";
+import { sendPasswordResetEmail } from "../utils/mailer.js";
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -15,6 +16,8 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
+    // Return same response whether user exists or not (security best practice)
+    // prevents email enumeration attacks
     if (!user) {
       res.status(200).json({
         message: "If an account with that email exists, an OTP has been sent.",
@@ -23,22 +26,33 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     }
 
     const otp = otpGenerator.generate(6, {
-      digits: true, upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false,
+      digits: true,
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
     });
 
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    await prisma.passwordReset.create({ data: { email, otp, expiresAt } });
+    // Delete any previous unused OTPs for this email
+    await prisma.passwordReset.deleteMany({
+      where: { email, used: false },
+    });
 
-    console.log(`[DEV] OTP for ${email}: ${otp}`);
+    await prisma.passwordReset.create({
+      data: { email, otp, expiresAt },
+    });
 
-    res.status(200).json({ message: "OTP sent to your email." });
+    await sendPasswordResetEmail(email, otp); // ← send real email
+
+    res.status(200).json({
+      message: "If an account with that email exists, an OTP has been sent.",
+    });
   } catch (error) {
     console.error("Send OTP error:", error);
     res.status(500).json({ detail: "Internal server error" });
   }
 };
-
 
 export const verifyOtpAndReset = async (req: Request, res: Response): Promise<void> => {
   try {
