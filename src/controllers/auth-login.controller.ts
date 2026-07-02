@@ -37,7 +37,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({
       access: accessToken,
       refresh: refreshToken,
-      role: user.role,
+      user: user,
     });
   } catch (error) {
     console.error("Login error:", error);
