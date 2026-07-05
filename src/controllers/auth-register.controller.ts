@@ -131,3 +131,29 @@ export const registerOrganization = async (req: Request, res: Response): Promise
   }
 };
 
+export const playerCategory = async(req: Request, res: Response): Promise<void> => {
+  try {
+    const categories = await prisma.category.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
+    res.json({ categories });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch categories' });
+  }
+}
+
+
+export const orgCategory = async(req: Request, res: Response): Promise<void> =>{
+  try {
+    const categories = await prisma.orgCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
+    res.json({ categories });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch org categories' });
+  }
+}
