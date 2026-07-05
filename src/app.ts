@@ -12,7 +12,7 @@ const PORT = process.env.PORT ?? 8000;
 // ─── Global Middleware ─────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
