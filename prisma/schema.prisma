@@ -19,6 +19,26 @@ enum UserRole {
   organization
 }
 
+enum BattingStyle {
+  RIGHT_HAND_BAT @map("Right-hand bat")
+  LEFT_HAND_BAT  @map("Left-hand bat")
+}
+
+enum BowlingStyle {
+  RIGHT_ARM_FAST      @map("Right-arm fast")
+  LEFT_ARM_FAST       @map("Left-arm fast")
+  LEFT_ARM_SPIN       @map("Left-arm spin")
+  RIGHT_ARM_SPIN       @map("Right-arm spin")
+  NONE                @map("None")
+}
+
+enum CricketPlayingRole {
+  WICKET_KEEPER @map("Wicket Keeper")
+  BATSMAN       @map("Batsman")
+  BOWLER        @map("Bowler")
+  ALL_ROUNDER   @map("All Rounder")
+}
+
 model User {
   id           String      @id @default(uuid()) @db.Uuid
   email        String      @unique
@@ -38,10 +58,35 @@ model User {
   isActive     Boolean     @default(true) @map("is_active")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  //relations
   refreshTokens RefreshToken[]
+  cricketProfile CricketProfile?
 
   @@map("users")
 }
+
+model CricketProfile {
+  id            String               @id @default(uuid()) @db.Uuid
+
+  userId        String               @unique @db.Uuid
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade) //fk fk
+
+  playingRole   CricketPlayingRole
+  battingStyle  BattingStyle
+  bowlingStyle  BowlingStyle
+
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  @@map("cricket_profiles")
+}
+
+
+
+
+
+
 
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
