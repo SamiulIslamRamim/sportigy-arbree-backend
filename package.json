@@ -5,6 +5,7 @@
   "main": "src/app.ts",
   "scripts": {
     "dev": "nodemon",
+    "build": "prisma generate && tsc",
     "start": "node src/app.ts",
     "migrate": "npx prisma migrate dev",
     "generate": "npx prisma generate",
@@ -50,6 +51,7 @@
     "@types/otp-generator": "^4.0.2",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
