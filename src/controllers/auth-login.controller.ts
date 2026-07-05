@@ -38,7 +38,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     prisma.refreshToken
       .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-      .catch((err) => console.error("Refresh token cleanup failed:", err));
+      .catch((err: Error) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       access: accessToken,
@@ -106,7 +106,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 
     prisma.refreshToken
       .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-      .catch((err) => console.error("Refresh token cleanup failed:", err));
+      .catch((err: Error) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       accessToken: newAccessToken,
