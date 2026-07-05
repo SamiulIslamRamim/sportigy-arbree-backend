@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 
-import { LoginBody, RefreshBody } from "../types/auth.type.js";
+import { JwtRefreshPayload, LoginBody, RefreshBody } from "../types/auth.type.js";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { prisma } from "../config/prisma.js";
+import { hashToken } from "../utils/token.js";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -30,13 +31,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
+    // store only the HASH 
     await prisma.refreshToken.create({
-      data: { token: refreshToken, userId: user.id, expiresAt: sevenDaysFromNow },
+      data: { token: hashToken(refreshToken), userId: user.id, expiresAt: sevenDaysFromNow },
     });
+
+    prisma.refreshToken
+      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch((err) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       access: accessToken,
-      refresh: refreshToken,
+      refresh: refreshToken, 
       user: user,
     });
   } catch (error) {
@@ -56,20 +62,32 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ detail: "Refresh token is required." });
       return;
     }
-    
+
+    let decoded: JwtRefreshPayload;
     try {
-      verifyRefreshToken(refreshToken);
+      decoded = verifyRefreshToken(refreshToken);
     } catch (err) {
       res.status(401).json({ detail: "Refresh token invalid!" });
       return;
     }
 
+    const hashedToken = hashToken(refreshToken);
+
     const storedToken = await prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
+      where: { token: hashedToken },
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.expiresAt < new Date()) {
+    // rotated away earlier. Someone is replaying a used/stolen token.
+    if (!storedToken) {
+      await prisma.refreshToken.deleteMany({ where: { userId: decoded.id } });
+      console.warn(`Refresh token reuse detected for user ${decoded.id}. All sessions revoked.`);
+      res.status(401).json({ detail: "Refresh token invalid! All sessions have been logged out for security." });
+      return;
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: storedToken.id } });
       res.status(401).json({ detail: "Refresh token invalid!" });
       return;
     }
@@ -83,11 +101,16 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
     await prisma.refreshToken.create({
-      data: { token: newRefreshToken, userId: storedToken.user.id, expiresAt: sevenDaysFromNow },
+      data: { token: hashToken(newRefreshToken), userId: storedToken.user.id, expiresAt: sevenDaysFromNow },
     });
+
+    prisma.refreshToken
+      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch((err) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
       message: "Token refreshed successfully",
     });
   } catch (error) {

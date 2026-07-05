@@ -12,7 +12,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
     const {
       username, name, email, birthday,
       contact_no, height, weight,
-      category, website_url, password,
+      categories, website_url, password,
     } = req.body as PlayerRegisterBody;
 
     const existingUser = await prisma.user.findFirst({
@@ -48,7 +48,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
           height:     height      ?? null,
           weight:     weight      ?? null,
           birthday:   birthday    ? new Date(birthday).toISOString() : null,
-          categories: category    ?? [],
+          categories: categories    ?? [],
           websiteUrl: website_url ?? null,
           city:       null,
           state:      null,
@@ -74,7 +74,7 @@ export const registerOrganization = async (req: Request, res: Response): Promise
   try {
     const {
       username, name, email, contact_no,
-      org_category, website_url,
+      categories, website_url,
       city, state, country, password,
     } = req.body as OrganizationRegisterBody;
 
@@ -111,7 +111,7 @@ export const registerOrganization = async (req: Request, res: Response): Promise
           city:       city        ?? null,
           state:      state       ?? null,
           country:    country     ?? null,
-          categories: org_category ?? [],
+          categories: categories ?? [],
           height:     null,
           weight:     null,
           birthday:   null,

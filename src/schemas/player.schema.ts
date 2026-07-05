@@ -8,7 +8,7 @@ export const playerRegisterSchema = z.object({
   contact_no: z.string(),
   height: z.string().optional(),
   weight: z.string().optional(),
-  category: z.array(z.string()).optional(),
+  categories: z.array(z.string()).optional(),
   website_url: z.url().optional(),
   password: z.string().min(6),
 });
