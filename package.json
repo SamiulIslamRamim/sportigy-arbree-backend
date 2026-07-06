@@ -4,14 +4,12 @@
   "description": "",
   "main": "src/app.ts",
   "scripts": {
-    "dev": "nodemon",
-    "build": "prisma generate && tsc",
-    "start": "node src/app.ts",
-    "migrate": "npx prisma migrate dev",
+    "dev": "tsx watch src/index.ts",
+    "start": "npx prisma generate && node dist/src/index.js",
     "generate": "npx prisma generate",
-    "studio": "npx prisma studio",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "tsx prisma/seed.ts"
+    "migrate": "npx prisma migrate dev",
+    "reset": "npx prisma migrate reset",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
