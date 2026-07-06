@@ -9,7 +9,7 @@
     "generate": "npx prisma generate",
     "migrate": "npx prisma migrate dev",
     "reset": "npx prisma migrate reset",
-    "build": "tsc"
+    "build": "npx prisma generate && tsc"
   },
   "repository": {
     "type": "git",
