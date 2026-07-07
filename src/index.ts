@@ -12,9 +12,10 @@ const PORT = process.env.PORT ?? 8000;
 // ─── Global Middleware ─────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: [process.env.CLIENT_URL!, "http://localhost:3000"],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
