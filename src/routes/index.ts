@@ -23,5 +23,9 @@ router.post("/forgot-password/",     sendOtp);
 router.post("/reset-password/",      verifyOtpAndReset);
 
 
+// ─── Player Recovery ─────────────────────────────────────────────────────────
+// router.get("/player-information", );
+
+
 
 export default router;
