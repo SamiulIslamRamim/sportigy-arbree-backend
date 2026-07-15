@@ -4,6 +4,8 @@ import { sendOtp, verifyOtpAndReset } from "../controllers/auth-password-reset.c
 import { verifyRegistrationOtp } from "../controllers/auth-verify.controller.js";
 import { orgCategory, playerCategory, registerOrganization, registerPlayer } from "../controllers/auth-register.controller.js";
 import { login, refresh } from "../controllers/auth-login.controller.js";
+import { authenticate } from "../middleware/auth.js";
+import { dashboardProfileInfo, updatePlayerInformation } from "../controllers/player/player-information.controller.js";
 
 const router = Router();
 
@@ -24,8 +26,8 @@ router.post("/reset-password/",      verifyOtpAndReset);
 
 
 // ─── Player Recovery ─────────────────────────────────────────────────────────
-// router.get("/player-information", );
-
+router.get("/player-information", authenticate, dashboardProfileInfo);
+router.patch("/player-information", authenticate, updatePlayerInformation);
 
 
 export default router;

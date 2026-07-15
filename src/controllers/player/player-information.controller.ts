@@ -1,5 +1,5 @@
 import { prisma } from "../../config/prisma";
-import { playerInfo } from "../../schemas/player.schema";
+import { playerInfo, updatePlayerInformationSchema } from "../../schemas/player.schema";
 import { AuthenticatedRequest } from "../../types/auth.type";
 import { Request, Response } from "express";
 
@@ -76,6 +76,70 @@ export const dashboardProfileInfo = async (
   }
 };
 
+
+export const updatePlayerInformation = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(400).json({ detail: "User ID not found in token." });
+      return;
+    }
+
+    // Validate body
+    const parsed = updatePlayerInformationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(422).json({ detail: parsed.error.flatten() });
+      return;
+    }
+
+    const {
+      name, weight, height, birthday,
+      city, state, country,
+      playingRole, battingStyle, bowlingStyle, academy,
+    } = parsed.data;
+
+    // Update User table fields
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: name ?? null,
+        weight: weight ?? null,
+        height: height ?? null,
+        birthday: birthday ? new Date(birthday) : null, // convert string → Date
+        city: city ?? null,
+        state: state ?? null,
+        country: country ?? null,
+      },
+    });
+
+    // Upsert CricketProfile (in case it doesn't exist yet)
+    await prisma.cricketProfile.upsert({
+      where: { userId },
+      update: {
+        playingRole: playingRole ?? null,
+        battingStyle: battingStyle ?? null,
+        bowlingStyle: bowlingStyle ?? null,
+        academy: academy ?? null,
+      },
+      create: {
+        userId: userId!,
+        playingRole: playingRole ?? null,
+        battingStyle: battingStyle ?? null,
+        bowlingStyle: bowlingStyle ?? null,
+        academy: academy ?? null,
+      },
+    });
+
+    res.status(200).json({ detail: "Player information updated successfully." });
+  } catch (error) {
+    console.error("Error updating player information:", error);
+    res.status(500).json({ detail: "Failed to update player information." });
+  }
+};
 
 
 

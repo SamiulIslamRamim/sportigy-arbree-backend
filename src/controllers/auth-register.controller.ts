@@ -29,6 +29,10 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
     const otp = generateOtp();
     const expiresAt = getOtpExpiry();
 
+
+    const hasCricket = categories?.includes("Cricket") ?? false;
+
+
     // Remove any previous pending registration for this email
     await prisma.pendingRegistration.deleteMany({ where: { email } });
 
@@ -53,6 +57,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
           city:       null,
           state:      null,
           country:    null,
+          shouldCreateCricketProfile: hasCricket,
         } satisfies PendingPayload,
       },
     });
@@ -62,7 +67,9 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
     res.status(200).json({
       message: "OTP sent to your email. Please verify within 3 minutes.",
       email,
+      
     });
+    console.log(otp);
   } catch (error) {
     console.error("Register player error:", error);
     res.status(500).json({ message: "Registration failed. Please try again." });
@@ -115,6 +122,7 @@ export const registerOrganization = async (req: Request, res: Response): Promise
           height:     null,
           weight:     null,
           birthday:   null,
+          shouldCreateCricketProfile: false
         } satisfies PendingPayload,
       },
     });

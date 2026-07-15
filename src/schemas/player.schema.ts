@@ -38,7 +38,7 @@ export const playerInfo = z.object({
     .string()
     .trim()
     .max(100, "Academy name is too long")
-    .optional(),
+    .optional().nullable(),
 
   weight: z
     .string()
@@ -55,18 +55,32 @@ export const playerInfo = z.object({
   city: z
     .string()
     .trim()
-    .min(1, "City is required").optional(),
+    .min(1, "City is required").optional().nullable(),
 
   state: z
     .string()
     .trim()
-    .min(1, "State is required").optional(),
+    .min(1, "State is required").optional().nullable(),
 
   country: z
     .string()
     .trim()
-    .min(1, "Country is required").optional(),
+    .min(1, "Country is required").optional().nullable(),
 });
+
+export const updatePlayerInformationSchema = z.object({
+  name: z.string().min(1),
+  academy: z.string().optional().nullable(),
+  weight: z.string().optional().nullable(),
+  height: z.string().optional().nullable(),
+  birthday: z.string().optional().nullable(), // comes as "YYYY-MM-DD" string
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  playingRole: z.enum(["WICKET_KEEPER", "BATSMAN", "BOWLER", "ALL_ROUNDER"]).optional().nullable(),
+  battingStyle: z.enum(["RIGHT_HAND_BAT", "LEFT_HAND_BAT"]).optional().nullable(),
+  bowlingStyle: z.enum(["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "LEFT_ARM_SPIN", "RIGHT_ARM_SPIN", "NONE"]).optional().nullable(),
+})
 
 
 

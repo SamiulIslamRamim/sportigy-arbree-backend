@@ -35,7 +35,7 @@ export const verifyRegistrationOtp = async (req: Request, res: Response): Promis
       return;
     }
 
-    const payload = pending.payload as unknown as PendingPayload; // ← cast through unknown
+    const payload = pending.payload as unknown as PendingPayload; 
 
     const user = await prisma.user.create({
       data: {
@@ -55,6 +55,20 @@ export const verifyRegistrationOtp = async (req: Request, res: Response): Promis
         country:      payload.country    ?? null,
       },
     });
+
+    
+    if (payload.shouldCreateCricketProfile) {
+      await prisma.cricketProfile.create({
+        data: {
+              userId: user.id,
+              playingRole: null,
+              battingStyle: null,
+              bowlingStyle: null,
+              academy: null,
+            },
+      });
+    }
+    // return user;
 
     await prisma.pendingRegistration.delete({ where: { id: pending.id } });
 

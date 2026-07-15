@@ -73,10 +73,10 @@ model CricketProfile {
   userId        String               @unique @db.Uuid
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade) //fk fk
 
-  playingRole   CricketPlayingRole
-  battingStyle  BattingStyle
-  bowlingStyle  BowlingStyle
-  academy       String
+  playingRole   CricketPlayingRole?
+  battingStyle  BattingStyle?
+  bowlingStyle  BowlingStyle?
+  academy       String?
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
 
