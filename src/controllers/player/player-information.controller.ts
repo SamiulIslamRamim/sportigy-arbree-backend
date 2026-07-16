@@ -1,6 +1,6 @@
 import { prisma } from "../../config/prisma";
-import { playerInfo, updatePlayerInformationSchema } from "../../schemas/player.schema";
-import { AuthenticatedRequest } from "../../types/auth.type";
+import { playerInfo, updatePlayerInformationSchema } from "../../schemas/player.schema.js";
+import { AuthenticatedRequest } from "../../types/auth.type.js";
 import { Request, Response } from "express";
 
 
