@@ -1,4 +1,4 @@
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { playerInfo, updatePlayerInformationSchema } from "../../schemas/player.schema.js";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
 import { Request, Response } from "express";

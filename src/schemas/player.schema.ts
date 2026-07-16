@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BattingStyle, BowlingStyle, CricketPlayingRole } from "../generated/prisma/enums";
+import { BattingStyle, BowlingStyle, CricketPlayingRole } from "../generated/prisma/enums.js";
 
 export const playerRegisterSchema = z.object({
   username: z.string(),
