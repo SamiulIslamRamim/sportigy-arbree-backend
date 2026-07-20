@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import router from "./routes/index.js";
 import "dotenv/config";
+import cookieParser from "cookie-parser";
 
 
 
@@ -17,6 +18,7 @@ app.use(cors({
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

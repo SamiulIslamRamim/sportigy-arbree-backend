@@ -12,7 +12,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
     const {
       username, name, email, birthday,
       contact_no, height, weight,
-      categories, website_url, password,
+      categories, website_url, password, country
     } = req.body as PlayerRegisterBody;
 
     const existingUser = await prisma.user.findFirst({
@@ -56,7 +56,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
           websiteUrl: website_url ?? null,
           city:       null,
           state:      null,
-          country:    null,
+          country,
           shouldCreateCricketProfile: hasCricket,
         } satisfies PendingPayload,
       },

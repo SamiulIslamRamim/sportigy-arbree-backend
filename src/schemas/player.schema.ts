@@ -3,6 +3,7 @@ import { BattingStyle, BowlingStyle, CricketPlayingRole } from "../generated/pri
 
 export const playerRegisterSchema = z.object({
   username: z.string(),
+  country: z.string(),
   name: z.string(),
   email: z.email(),
   birthday: z.string().optional(),

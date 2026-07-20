@@ -1,8 +1,16 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 
-import { JwtRefreshPayload, LoginBody, RefreshBody } from "../types/auth.type.js";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
+import {
+  JwtRefreshPayload,
+  LoginBody,
+  RefreshBody,
+} from "../types/auth.type.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt.js";
 import { prisma } from "../config/prisma.js";
 import { hashToken } from "../utils/token.js";
 
@@ -15,34 +23,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!user || !user.isActive) {
-      res.status(401).json({ detail: "No active account found with the given credentials" });
+      res
+        .status(401)
+        .json({ detail: "No active account found with the given credentials" });
       return;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      res.status(401).json({ detail: "No active account found with the given credentials" });
+      res.status(401).json({ detail: "Wrong account credentials" });
       return;
     }
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-    // store only the HASH 
-    await prisma.refreshToken.create({
-      data: { token: hashToken(refreshToken), userId: user.id, expiresAt: sevenDaysFromNow },
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/token',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     });
-
-    prisma.refreshToken
-      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-      .catch((err: Error) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       access: accessToken,
-      refresh: refreshToken, 
       user: user,
     });
   } catch (error) {
@@ -51,12 +56,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-
-
-
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body as RefreshBody;
+    const  refreshToken  = req.cookies?.refreshToken;
 
     if (!refreshToken) {
       res.status(400).json({ detail: "Refresh token is required." });
@@ -71,46 +73,28 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const hashedToken = hashToken(refreshToken);
-
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { token: hashedToken },
-      include: { user: true },
-    });
-
-    // rotated away earlier. Someone is replaying a used/stolen token.
-    if (!storedToken) {
-      await prisma.refreshToken.deleteMany({ where: { userId: decoded.id } });
-      console.warn(`Refresh token reuse detected for user ${decoded.id}. All sessions revoked.`);
-      res.status(401).json({ detail: "Refresh token invalid! All sessions have been logged out for security." });
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user) {
+      res.clearCookie('refreshToken', { path: '/token' });
+      res.status(401).json({ detail: "User not found." });
       return;
     }
 
-    if (storedToken.expiresAt < new Date()) {
-      await prisma.refreshToken.delete({ where: { id: storedToken.id } });
-      res.status(401).json({ detail: "Refresh token invalid!" });
-      return;
-    }
 
-    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
 
-    const newAccessToken = generateAccessToken(storedToken.user);
-    const newRefreshToken = generateRefreshToken(storedToken.user);
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
 
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-    await prisma.refreshToken.create({
-      data: { token: hashToken(newRefreshToken), userId: storedToken.user.id, expiresAt: sevenDaysFromNow },
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/token',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-    prisma.refreshToken
-      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-      .catch((err: Error) => console.error("Refresh token cleanup failed:", err));
 
     res.status(200).json({
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
       message: "Token refreshed successfully",
     });
   } catch (error) {

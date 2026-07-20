@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 
 import { verifyOtpSchema } from "../schemas/auth.schema.js";
-import { VerifyOtpBody } from "../types/auth.type.js";
+import { JwtRefreshPayload, VerifyOtpBody } from "../types/auth.type.js";
 import { prisma } from "../config/prisma.js";
 import { PendingPayload } from "../types/pending_registration.type.js";
+import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.js";
 
 export const verifyRegistrationOtp = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -81,5 +82,42 @@ export const verifyRegistrationOtp = async (req: Request, res: Response): Promis
   } catch (error) {
     console.error("OTP verification error:", error);
     res.status(500).json({ message: "Verification failed. Please try again." });
+  }
+};
+
+export const verifySession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ detail: "No session found." });
+      return;
+    }
+
+    let decoded: JwtRefreshPayload;
+    try {
+      decoded = verifyRefreshToken(refreshToken);
+    } catch {
+      res.status(401).json({ detail: "Session expired." });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user) {
+      res.clearCookie('refreshToken', { path: '/token' });
+      res.status(401).json({ detail: "Session expired." });
+      return;
+    }
+
+    // Return a new access token
+    const newAccessToken = generateAccessToken(user);
+
+    res.status(200).json({
+      accessToken: newAccessToken,
+      user,
+    });
+  } catch (error) {
+    console.error("Verify session error:", error);
+    res.status(500).json({ detail: "Internal server error" });
   }
 };
