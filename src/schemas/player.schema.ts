@@ -7,7 +7,7 @@ export const playerRegisterSchema = z.object({
   name: z.string(),
   email: z.email(),
   birthday: z.string().optional(),
-  contact_no: z.string(),
+  contactNo: z.string(),
   height: z.string().optional(),
   weight: z.string().optional(),
   categories: z.array(z.string()).optional(),

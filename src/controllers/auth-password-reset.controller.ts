@@ -44,7 +44,7 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     });
 
     await sendPasswordResetEmail(email, otp); // ← send real email
-
+    console.log(otp);
     res.status(200).json({
       message: "If an account with that email exists, an OTP has been sent.",
     });

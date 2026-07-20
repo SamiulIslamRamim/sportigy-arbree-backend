@@ -11,7 +11,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
   try {
     const {
       username, name, email, birthday,
-      contact_no, height, weight,
+      contactNo, height, weight,
       categories, website_url, password, country
     } = req.body as PlayerRegisterBody;
 
@@ -48,7 +48,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
           name,
           passwordHash,
           role:       "player",
-          contactNo:  contact_no,
+          contactNo:  contactNo,
           height:     height      ?? null,
           weight:     weight      ?? null,
           birthday:   birthday    ? new Date(birthday).toISOString() : null,
@@ -80,7 +80,7 @@ export const registerPlayer = async (req: Request, res: Response): Promise<void>
 export const registerOrganization = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      username, name, email, contact_no,
+      username, name, email, contactNo,
       categories, website_url,
       city, state, country, password,
     } = req.body as OrganizationRegisterBody;
@@ -113,7 +113,7 @@ export const registerOrganization = async (req: Request, res: Response): Promise
           name,
           passwordHash,
           role:       "organization",
-          contactNo:  contact_no,
+          contactNo:  contactNo,
           websiteUrl: website_url ?? null,
           city:       city        ?? null,
           state:      state       ?? null,
@@ -128,7 +128,7 @@ export const registerOrganization = async (req: Request, res: Response): Promise
     });
 
     await sendOtpEmail(email, otp);
-
+      console.log(otp)
     res.status(200).json({
       message: "OTP sent to your email. Please verify within 3 minutes.",
       email,
