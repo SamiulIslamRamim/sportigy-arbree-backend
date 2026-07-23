@@ -25,13 +25,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!user || !user.isActive) {
       res
         .status(401)
-        .json({ detail: "No active account found with the given credentials" });
+        .json({ detail: "Invalid email" });
       return;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      res.status(401).json({ detail: "Wrong account credentials" });
+      res.status(401).json({ detail: "Invalid password" });
       return;
     }
 
