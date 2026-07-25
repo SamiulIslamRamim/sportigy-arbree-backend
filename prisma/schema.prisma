@@ -14,125 +14,340 @@ datasource db {
 
 }
 
-enum UserRole {
-  player
-  organization
+// enum UserRole {
+//   player
+//   organization
+// }
+
+// enum BattingStyle {
+//   RIGHT_HAND_BAT @map("Right-hand bat")
+//   LEFT_HAND_BAT  @map("Left-hand bat")
+// }
+
+// enum BowlingStyle {
+//   RIGHT_ARM_FAST      @map("Right-arm fast")
+//   LEFT_ARM_FAST       @map("Left-arm fast")
+//   LEFT_ARM_SPIN       @map("Left-arm spin")
+//   RIGHT_ARM_SPIN       @map("Right-arm spin")
+//   NONE                @map("None")
+// }
+
+// enum CricketPlayingRole {
+//   WICKET_KEEPER @map("Wicket Keeper")
+//   BATSMAN       @map("Batsman")
+//   BOWLER        @map("Bowler")
+//   ALL_ROUNDER   @map("All Rounder")
+// }
+
+// model User {
+//   id           String      @id @default(uuid()) @db.Uuid
+//   email        String      @unique
+//   username     String     @unique
+//   passwordHash String      @map("password_hash")
+//   role         UserRole      @default(player)
+//   name         String?
+//   contactNo    String?     @map("contact_no")
+//   height       String?
+//   weight       String?
+//   birthday     DateTime?   @db.Date
+//   categories   String[]
+//   websiteUrl   String?     @map("website_url")
+//   city         String?
+//   state        String?
+//   country      String?
+//   isActive     Boolean     @default(true) @map("is_active")
+//   createdAt    DateTime    @default(now()) @map("created_at")
+//   updatedAt    DateTime    @updatedAt @map("updated_at")
+
+//   //relations
+//   refreshTokens RefreshToken[]
+//   cricketProfile CricketProfile?
+
+//   @@map("users")
+// }
+
+
+// model CricketProfile {
+//   id            String               @id @default(uuid()) @db.Uuid
+
+//   userId        String               @unique @db.Uuid
+//   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade) //fk fk
+
+//   playingRole   CricketPlayingRole?
+//   battingStyle  BattingStyle?
+//   bowlingStyle  BowlingStyle?
+//   academy       String?
+//   createdAt     DateTime             @default(now()) @map("created_at")
+//   updatedAt     DateTime             @updatedAt @map("updated_at")
+
+//   @@map("cricket_profiles")
+// }
+
+
+
+
+
+
+
+// model RefreshToken {
+//   id        String   @id @default(uuid()) @db.Uuid
+//   token     String   @unique
+//   userId    String   @map("user_id") @db.Uuid
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   expiresAt DateTime @map("expires_at")
+//   createdAt DateTime @default(now()) @map("created_at")
+
+//   @@map("refresh_tokens")
+// }
+
+// model PasswordReset {
+//   id        String   @id @default(uuid()) @db.Uuid
+//   email     String
+//   otp       String
+//   expiresAt DateTime @map("expires_at")
+//   used      Boolean  @default(false)
+//   createdAt DateTime @default(now()) @map("created_at")
+
+//   @@map("password_resets")
+// }
+
+// model Category {
+//   id   String @id @default(uuid()) @db.Uuid
+//   name String @unique
+
+//   @@map("categories")
+// }
+
+// model OrgCategory {
+//   id   String @id @default(uuid()) @db.Uuid
+//   name String @unique
+
+//   @@map("org_categories")
+// }
+
+// model PendingRegistration {
+//   id        String   @id @default(uuid()) @db.Uuid
+//   email     String
+//   username  String
+//   otp       String
+//   payload   Json
+//   expiresAt DateTime @map("expires_at")
+//   createdAt DateTime @default(now()) @map("created_at")
+
+//   @@map("pending_registrations")
+// }
+
+
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum DataType {
+  NUMBER
+  STRING
+  BOOLEAN
+  PERCENTAGE
+  DURATION_SECONDS
 }
 
-enum BattingStyle {
-  RIGHT_HAND_BAT @map("Right-hand bat")
-  LEFT_HAND_BAT  @map("Left-hand bat")
+enum AggregationType {
+  SUM
+  AVERAGE
+  MAX
+  MIN
+  LATEST
+  NONE
 }
 
-enum BowlingStyle {
-  RIGHT_ARM_FAST      @map("Right-arm fast")
-  LEFT_ARM_FAST       @map("Left-arm fast")
-  LEFT_ARM_SPIN       @map("Left-arm spin")
-  RIGHT_ARM_SPIN       @map("Right-arm spin")
-  NONE                @map("None")
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+  // NO_RESULT
 }
 
-enum CricketPlayingRole {
-  WICKET_KEEPER @map("Wicket Keeper")
-  BATSMAN       @map("Batsman")
-  BOWLER        @map("Bowler")
-  ALL_ROUNDER   @map("All Rounder")
+// ============================================
+// ADMIN MANAGEMENT MODELS
+// ============================================
+
+model Sport {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  // iconUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  categories       SportCategory[]
+  definitions      StatDefinition[]
+  matches          Match[]
+  playerMatchStats PlayerMatchStat[]
+  careerSummaries  PlayerCareerSummary[]
+
+  @@index([isActive])
+  @@index([slug])
 }
 
-model User {
-  id           String      @id @default(uuid()) @db.Uuid
-  email        String      @unique
-  username     String     @unique
-  passwordHash String      @map("password_hash")
-  role         UserRole      @default(player)
-  name         String?
-  contactNo    String?     @map("contact_no")
-  height       String?
-  weight       String?
-  birthday     DateTime?   @db.Date
-  categories   String[]
-  websiteUrl   String?     @map("website_url")
-  city         String?
-  state        String?
-  country      String?
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+model SportCategory {
+  id          String   @id @default(uuid())
+  sportId     String
+  sport       Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  description String?
+  iconUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  //relations
-  refreshTokens RefreshToken[]
-  cricketProfile CricketProfile?
+  // Relationships
+  matches          Match[]
+  playerMatchStats PlayerMatchStat[]
+  careerSummaries  PlayerCareerSummary[]
 
-  @@map("users")
+  @@unique([sportId, slug])
+  @@index([sportId])
+  @@index([isActive])
 }
 
+model StatDefinition {
+  id              String          @id @default(uuid())
+  sportId         String
+  sport           Sport           @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  key             String
+  label           String
+  description     String?
+  dataType        DataType        @default(NUMBER)
+  aggregation     AggregationType @default(SUM)
+  isRequired      Boolean         @default(false)
+  minValue        Int?
+  maxValue        Int?
+  displayOrder    Int             @default(0)
+  unit            String?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-model CricketProfile {
-  id            String               @id @default(uuid()) @db.Uuid
-
-  userId        String               @unique @db.Uuid
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade) //fk fk
-
-  playingRole   CricketPlayingRole?
-  battingStyle  BattingStyle?
-  bowlingStyle  BowlingStyle?
-  academy       String?
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @updatedAt @map("updated_at")
-
-  @@map("cricket_profiles")
+  @@unique([sportId, key])
+  @@index([sportId])
+  @@index([isActive])
 }
 
+// ============================================
+// CORE ENTITY MODELS
+// ============================================
 
+model Player {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  fullName    String
+  phone       String?
+  dateOfBirth DateTime?
+  nationality String?
+  avatarUrl   String?
+  bio         String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  // Relationships
+  matchStats       PlayerMatchStat[]
+  careerSummaries  PlayerCareerSummary[]
 
-
-
-
-model RefreshToken {
-  id        String   @id @default(uuid()) @db.Uuid
-  token     String   @unique
-  userId    String   @map("user_id") @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("refresh_tokens")
+  @@index([isActive])
+  @@index([email])
 }
 
-model PasswordReset {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String
-  otp       String
-  expiresAt DateTime @map("expires_at")
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+model Match {
+  id                String      @id @default(uuid())
+  sportId           String
+  sport             Sport       @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  sportCategoryId   String
+  sportCategory     SportCategory @relation(fields: [sportCategoryId], references: [id], onDelete: Restrict)
+  matchDate         DateTime
+  opponent          String?
+  venue             String?
+  tournament        String?
+  matchType         String?
+  homeTeam          String?
+  awayTeam          String?
+  matchResult       MatchResult?
+  weatherCondition  String?
+  notes             String?
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  @@map("password_resets")
+  // Relationships
+  playerMatchStats  PlayerMatchStat[]
+
+  @@index([sportId])
+  @@index([sportCategoryId])
+  @@index([matchDate])
+  @@index([sportId, sportCategoryId, matchDate])
 }
 
-model Category {
-  id   String @id @default(uuid()) @db.Uuid
-  name String @unique
+model PlayerMatchStat {
+  id                String   @id @default(uuid())
+  matchId           String
+  match             Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId          String
+  player            Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sportId           String
+  sport             Sport    @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  sportCategoryId   String
+  sportCategory     SportCategory @relation(fields: [sportCategoryId], references: [id], onDelete: Restrict)
+  
+  // Dynamic sport-specific stats stored as JSONB
+  stats             Json
+  
+  // Context fields
+  playerRole        String?
+  playerTeam        String?
+  isSubstitute      Boolean  @default(false)
+  minutesPlayed     Int?
+  performanceRating Float?
+  notes             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  @@map("categories")
+  @@unique([matchId, playerId])
+  @@index([playerId])
+  @@index([matchId])
+  @@index([sportId])
+  @@index([sportCategoryId])
+  @@index([playerId, sportId, sportCategoryId])
+  @@index([playerId, sportId, createdAt])
 }
 
-model OrgCategory {
-  id   String @id @default(uuid()) @db.Uuid
-  name String @unique
+// ============================================
+// AGGREGATION MODELS
+// ============================================
 
-  @@map("org_categories")
-}
+model PlayerCareerSummary {
+  id                String   @id @default(uuid())
+  playerId          String
+  player            Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sportId           String
+  sport             Sport    @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  sportCategoryId   String
+  sportCategory     SportCategory @relation(fields: [sportCategoryId], references: [id], onDelete: Restrict)
+  
+  matchesPlayed     Int      @default(0)
+  
+  // Aggregated career stats stored as JSONB
+  // Keys like: totalRuns, avgRuns, totalGoals, etc.
+  careerStats       Json
+  
+  lastUpdated       DateTime @default(now()) @updatedAt
 
-model PendingRegistration {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String
-  username  String
-  otp       String
-  payload   Json
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("pending_registrations")
+  @@unique([playerId, sportId, sportCategoryId])
+  @@index([playerId])
+  @@index([playerId, sportId])
+  @@index([sportId, sportCategoryId])
 }
