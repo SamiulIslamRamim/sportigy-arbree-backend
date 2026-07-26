@@ -9,6 +9,14 @@ export const generateAccessToken = (user: { id: string;}): string => {
   );
 };
 
+export const generateAdminAccessToken = (payload: { id: string; role: string }): string => {
+  return jwt.sign(
+    { id: payload.id, role: payload.role },
+    process.env.JWT_SECRET as string,
+    { expiresIn: "15m" }
+  );
+};
+
 export const generateRefreshToken = (user: { id: string }): string => {
   return jwt.sign(
     { id: user.id },

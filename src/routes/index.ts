@@ -7,6 +7,7 @@ import { login, refresh } from "../controllers/auth-login.controller.js";
 import { authenticate } from "../middleware/auth.js";
 import { dashboardProfileInfo, updatePlayerInformation } from "../controllers/player/player-information.controller.js";
 import { logout } from "../controllers/auth-logout.controller.js";
+import { adminLogin, adminLogout, adminRefresh, adminVerifySession } from "../controllers/admin/auth-login.controller.js";
 
 const router = Router();
 
@@ -32,5 +33,11 @@ router.post("/reset-password/",      verifyOtpAndReset);
 router.get("/player-information", authenticate, dashboardProfileInfo);
 router.patch("/player-information", authenticate, updatePlayerInformation);
 
+
+// ─── Admin ─────────────────────────────────────────────────────────
+router.post("/admin/token/",         adminLogin);
+router.post("/admin/token/refresh/",  adminRefresh);
+router.get("/admin/token/verify/",   adminVerifySession);
+router.post("/admin/token/logout/",  adminLogout);
 
 export default router;
