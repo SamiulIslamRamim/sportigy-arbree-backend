@@ -10,8 +10,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
-
 }
 
 enum UserRole {
@@ -82,8 +80,6 @@ model CricketProfile {
 
   @@map("cricket_profiles")
 }
-
-
 
 
 

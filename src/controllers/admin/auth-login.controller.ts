@@ -10,7 +10,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
 
     // ── Hardcoded admin credentials — 🔁 SWAP TO DB ─────────
     const ADMIN_USERNAME = "admin";
-    const ADMIN_PASSWORD = "amdin1234";
+    const ADMIN_PASSWORD = "admin1234";
 
     if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       res.status(401).json({ detail: "Invalid admin credentials" });
@@ -29,7 +29,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     });
 
     res.status(200).json({
-      access: accessToken,
+      accessToken: accessToken,
       admin: { username: "admin", role: "admin" },
     });
   } catch (error) {
