@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "npx prisma generate && node dist/src/index.js",
-    "generate": "npx prisma generate",
-    "migrate": "npx prisma migrate dev",
-    "reset": "npx prisma migrate reset",
+    "generate": "npx prisma generate --schema=prisma/schema",
+    "migrate": "npx prisma migrate dev --schema=prisma/schema",
+    "reset": "npx prisma migrate reset --schema=prisma/schema",
     "build": "npx prisma generate && tsc"
   },
   "repository": {

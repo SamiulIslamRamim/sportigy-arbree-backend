@@ -7,7 +7,7 @@ import { login, refresh } from "../controllers/auth-login.controller.js";
 import { authenticate } from "../middleware/auth.js";
 import { dashboardProfileInfo, updatePlayerInformation } from "../controllers/player/player-information.controller.js";
 import { logout } from "../controllers/auth-logout.controller.js";
-import { adminLogin, adminLogout, adminRefresh, adminVerifySession } from "../controllers/admin/auth-login.controller.js";
+import { adminLogin, adminLogout, adminRefresh, adminVerifySession } from "../controllers/admin/auth.controller.js";
 
 const router = Router();
 

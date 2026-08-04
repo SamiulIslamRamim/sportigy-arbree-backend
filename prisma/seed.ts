@@ -1,29 +1,26 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "../src/config/prisma";
 
+
 async function main() {
-  // Seed Categories
-  await prisma.category.createMany({
-    data: [
-      { name: "Cricket" },
-      { name: "Football" },
-      { name: "Golf" },
-      { name: "Table-Tennis" },
-      { name: "Tennis" },
-      { name: "Badminton" },
-    ],
-    skipDuplicates: true,
+  const passwordHash = await bcrypt.hash("admin1234", 10);
+
+  await prisma.admin.upsert({
+    where: { username: "admin" },
+    update: { passwordHash },
+    create: { username: "admin", passwordHash },
   });
 
   // Seed Organization Categories
-  await prisma.orgCategory.createMany({
-    data: [
-      { name: "Profitable" },
-      { name: "Non-Profitable" },
-    ],
-    skipDuplicates: true,
-  });
+  // await prisma.orgCategory.createMany({
+  //   data: [
+  //     { name: "Profitable" },
+  //     { name: "Non-Profitable" },
+  //   ],
+  //   skipDuplicates: true,
+  // });
 
-  console.log("Categories and Organization Categories seeded successfully!");
+  console.log("Admin and Organization Categories seeded successfully!");
 }
 
 main()

@@ -1,24 +1,29 @@
 import { Request, Response } from "express";
-import { JwtRefreshPayload, LoginBody } from "../../types/auth.type";
-import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt";
 
+import { JwtRefreshPayload, LoginBody } from "../../types/auth.type";
+import { prisma } from "../../config/prisma";
+import bcrypt from "bcryptjs";
+import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt";
 
 // ─── Admin Login ────────────────────────────────────────────────
 export const adminLogin = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password } = req.body as LoginBody;
 
-    // ── Hardcoded admin credentials — 🔁 SWAP TO DB ─────────
-    const ADMIN_USERNAME = "admin";
-    const ADMIN_PASSWORD = "admin1234";
-
-    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    const admin = await prisma.admin.findUnique({ where: { username } });
+    if (!admin) {
       res.status(401).json({ detail: "Invalid admin credentials" });
       return;
     }
 
-    const accessToken = generateAdminAccessToken({ id: "admin", role: "admin" });
-    const refreshToken = generateRefreshToken({ id: "admin" });
+    const isValid = await bcrypt.compare(password, admin.passwordHash);
+    if (!isValid) {
+      res.status(401).json({ detail: "Invalid admin credentials" });
+      return;
+    }
+
+    const accessToken = generateAdminAccessToken({ id: admin.id, role: admin.role });
+    const refreshToken = generateRefreshToken({ id: admin.id });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -30,7 +35,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
 
     res.status(200).json({
       accessToken: accessToken,
-      admin: { username: "admin", role: "admin" },
+      admin: { username: admin.username, role: admin.role },
     });
   } catch (error) {
     console.error("Admin login error:", error);
@@ -56,15 +61,15 @@ export const adminRefresh = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // 🔁 SWAP TO DB: replace with prisma.admin.findUnique
-    if (decoded.id !== "admin") {
+    const admin = await prisma.admin.findUnique({ where: { id: decoded.id } });
+    if (!admin) {
       res.clearCookie('refreshToken', { path: '/admin' });
       res.status(401).json({ detail: "Admin not found." });
       return;
     }
 
-    const newAccessToken = generateAdminAccessToken({ id: "admin", role: "admin" });
-    const newRefreshToken = generateRefreshToken({ id: "admin" });
+    const newAccessToken = generateAdminAccessToken({ id: admin.id, role: admin.role });
+    const newRefreshToken = generateRefreshToken({ id: admin.id });
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
@@ -85,7 +90,6 @@ export const adminRefresh = async (req: Request, res: Response): Promise<void> =
 };
 
 // ─── Admin Verify Session ───────────────────────────────────────
-// Checks the refresh token cookie, validates admin, returns a new access token
 export const adminVerifySession = async (req: Request, res: Response): Promise<void> => {
   try {
     const refreshToken = req.cookies?.refreshToken;
@@ -103,18 +107,18 @@ export const adminVerifySession = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // 🔁 SWAP TO DB: replace with prisma.admin.findUnique
-    if (decoded.id !== "admin") {
+    const admin = await prisma.admin.findUnique({ where: { id: decoded.id } });
+    if (!admin) {
       res.clearCookie('refreshToken', { path: '/admin' });
       res.status(401).json({ detail: "Session expired." });
       return;
     }
 
-    const newAccessToken = generateAdminAccessToken({ id: "admin", role: "admin" });
+    const newAccessToken = generateAdminAccessToken({ id: admin.id, role: admin.role });
 
     res.status(200).json({
       accessToken: newAccessToken,
-      admin: { username: "admin", role: "admin" },
+      admin: { id: admin.id, username: admin.username, role: admin.role },
     });
   } catch (error) {
     console.error("Admin verify session error:", error);

@@ -1,0 +1,32 @@
+enum UserRole {
+  player
+  organization
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+  TIE
+  NO_RESULT
+}
+
+enum FieldSection {
+  PROFILE
+  MATCH
+}
+
+enum FieldType {
+  SELECT
+  MULTI_SELECT
+  NUMBER
+  TEXT
+  BOOLEAN
+  DATE
+}
+
+enum Gender {
+  male 
+  female
+  other
+}
