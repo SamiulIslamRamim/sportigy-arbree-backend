@@ -12,13 +12,15 @@ async function main() {
   });
 
   // Seed Organization Categories
-  // await prisma.orgCategory.createMany({
-  //   data: [
-  //     { name: "Profitable" },
-  //     { name: "Non-Profitable" },
-  //   ],
-  //   skipDuplicates: true,
-  // });
+  await prisma.orgCategory.createMany({
+    data: [
+      { name: "Academy" },
+      { name: "Bank" },
+      { name: "School" },
+      { name: "Others" },
+    ],
+    skipDuplicates: true,
+  });
 
   console.log("Admin and Organization Categories seeded successfully!");
 }

@@ -4,7 +4,9 @@ import helmet from "helmet";
 import router from "./routes/index.js";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
-
+import { AppError } from "./utils/AppError.js";
+import { ERROR_CODES } from "./constants/errorCodes.js";
+import { errorHandler } from "./utils/errorHandler.js";
 
 
 const app = express();
@@ -25,17 +27,13 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Routes ────────────────────────────────────────────────────────────────────
 app.use("/", router);
 
-// ─── 404 Handler ──────────────────────────────────────────────────────────────
-app.use((_req, res) => {
-  res.status(404).json({ detail: "Route not found." });
+// ─── 404 Handler (routed through AppError for envelope consistency) ─────────────
+app.use((_req, _res, next) => {
+  next(new AppError(ERROR_CODES.NOT_FOUND));
 });
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ detail: "Internal server error." });
-});
-
+app.use(errorHandler);
 
 // ─── Server ───────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {

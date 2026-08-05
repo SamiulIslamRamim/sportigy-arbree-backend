@@ -1,104 +1,80 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import { asyncHandler } from "../utils/asyncHandler";
+import { JwtRefreshPayload, LoginBody } from "../types/auth.type";
+import { prisma } from "../config/prisma";
+import { AppError } from "../utils/AppError";
+import { ERROR_CODES } from "../constants/errorCodes";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
+import { ResponseHandler } from "../utils/Responsehandler";
 
-import {
-  JwtRefreshPayload,
-  LoginBody,
-  RefreshBody,
-} from "../types/auth.type.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from "../utils/jwt.js";
-import { prisma } from "../config/prisma.js";
-import { hashToken } from "../utils/token.js";
 
-export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { username, password } = req.body as LoginBody;
 
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email: username }, { username }] },
-    });
-
-    if (!user || !user.isActive) {
-      res
-        .status(401)
-        .json({ detail: "Invalid email" });
-      return;
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
-      res.status(401).json({ detail: "Invalid password" });
-      return;
-    }
-
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/token',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-    });
-
-    res.status(200).json({
-      access: accessToken,
-      user: user,
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ detail: "Internal server error" });
-  }
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/token',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-export const refresh = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const  refreshToken  = req.cookies?.refreshToken;
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { username, password } = req.body as LoginBody;
 
-    if (!refreshToken) {
-      res.status(400).json({ detail: "Refresh token is required." });
-      return;
-    }
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ email: username }, { username }] },
+  });
 
-    let decoded: JwtRefreshPayload;
-    try {
-      decoded = verifyRefreshToken(refreshToken);
-    } catch (err) {
-      res.status(401).json({ detail: "Refresh token invalid!" });
-      return;
-    }
-
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) {
-      res.clearCookie('refreshToken', { path: '/token' });
-      res.status(401).json({ detail: "User not found." });
-      return;
-    }
-
-
-
-    const newAccessToken = generateAccessToken(user);
-    const newRefreshToken = generateRefreshToken(user);
-
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/token',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({
-      accessToken: newAccessToken,
-      message: "Token refreshed successfully",
-    });
-  } catch (error) {
-    console.error("Refresh error:", error);
-    res.status(500).json({ detail: "Internal server error" });
+  if (!user) {
+    throw new AppError(ERROR_CODES.USER_NOT_FOUND);
   }
-};
+
+  if (!user.isActive) {
+    throw new AppError(ERROR_CODES.ACCOUNT_DISABLED);
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isPasswordValid) {
+    throw new AppError(ERROR_CODES.INVALID_EMAIL_PASSWORD);
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+
+  ResponseHandler.success(res, "Login successful.", {
+    access: accessToken,
+    user,
+  });
+});
+
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    throw new AppError(ERROR_CODES.SESSION_TOKEN_INVALID);
+  }
+
+  let decoded: JwtRefreshPayload;
+  try {
+    decoded = verifyRefreshToken(refreshToken);
+  } catch {
+    throw new AppError(ERROR_CODES.SESSION_INVALID);
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+  if (!user) {
+    res.clearCookie('refreshToken', { path: '/token' });
+    throw new AppError(ERROR_CODES.USER_NOT_FOUND);
+  }
+
+  const newAccessToken = generateAccessToken(user);
+  const newRefreshToken = generateRefreshToken(user);
+
+  res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
+
+  ResponseHandler.success(res, "Token refreshed successfully.", {
+    accessToken: newAccessToken,
+  });
+});

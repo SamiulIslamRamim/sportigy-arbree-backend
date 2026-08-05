@@ -12,6 +12,6 @@ export interface PendingPayload {
   websiteUrl: string | null;
   city: string | null;
   state: string | null;
-  country: string | null;
+  country: string;
   shouldCreateCricketProfile: boolean;
 }

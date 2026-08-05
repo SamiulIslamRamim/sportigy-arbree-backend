@@ -1,167 +1,158 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { prisma } from "../config/prisma.js";
-import { PlayerRegisterBody } from "../types/player.type.js";
-import { OrganizationRegisterBody } from "../types/organization.type.js";
-import { generateOtp, getOtpExpiry } from "../utils/otp.js";
-import { PendingPayload } from "../types/pending_registration.type.js";
-import { sendOtpEmail } from "../utils/mailer.js";
+import { ResponseHandler } from "../utils/Responsehandler";
+import { prisma } from "../config/prisma";
+import { asyncHandler } from "../utils/asyncHandler";
+import { sendOtpEmail } from "../utils/mailer";
+import { PendingPayload } from "../types/pending_registration.type";
+import { generateOtp, getOtpExpiry } from "../utils/otp";
+import { ERROR_CODES } from "../constants/errorCodes";
+import { AppError } from "../utils/AppError";
+import { OrganizationRegisterBody } from "../types/organization.type";
+import { PlayerRegisterBody } from "../types/player.type";
 
-export const registerPlayer = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const {
-      username, name, email, birthday,
-      contactNo, height, weight,
-      categories, website_url, password, country
-    } = req.body as PlayerRegisterBody;
+// Placeholder sport whitelist — finalize in Phase 2
+const KNOWN_SPORTS = ["Cricket", "Football", "Golf", "Table-Tennis", "Tennis", "Badminton"];
 
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-    });
-    if (existingUser) {
-      res.status(400).json({ message: "A user with this email or username already exists." });
-      return;
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const otp = generateOtp();
-    const expiresAt = getOtpExpiry();
-
-
-    const hasCricket = categories?.includes("Cricket") ?? false;
-
-
-    // Remove any previous pending registration for this email
-    await prisma.pendingRegistration.deleteMany({ where: { email } });
-
-    await prisma.pendingRegistration.create({
-      data: {
-        email,
-        username,
-        otp,
-        expiresAt,
-        payload: {
-          email,
-          username,
-          name,
-          passwordHash,
-          role:       "player",
-          contactNo:  contactNo,
-          height:     height      ?? null,
-          weight:     weight      ?? null,
-          birthday:   birthday    ? new Date(birthday).toISOString() : null,
-          categories: categories    ?? [],
-          websiteUrl: website_url ?? null,
-          city:       null,
-          state:      null,
-          country,
-          shouldCreateCricketProfile: hasCricket,
-        } satisfies PendingPayload,
-      },
-    });
-
-    await sendOtpEmail(email, otp);
-
-    res.status(200).json({
-      message: "OTP sent to your email. Please verify within 3 minutes.",
-      email,
-      
-    });
-    console.log(otp);
-  } catch (error) {
-    console.error("Register player error:", error);
-    res.status(500).json({ message: "Registration failed. Please try again." });
+const assertKnownSports = (categories?: string[]): void => {
+  const invalid = (categories ?? []).find((c) => !KNOWN_SPORTS.includes(c));
+  if (invalid) {
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT);
   }
 };
 
+export const registerPlayer = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    username, name, email, birthday,
+    contactNo, height, weight,
+    categories, website_url, password, country
+  } = req.body as PlayerRegisterBody;
 
-export const registerOrganization = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const {
-      username, name, email, contactNo,
-      categories, website_url,
-      city, state, country, password,
-    } = req.body as OrganizationRegisterBody;
+  assertKnownSports(categories);
 
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-    });
-    if (existingUser) {
-      res.status(400).json({ message: "A user with this email or username already exists." });
-      return;
+  const existingUser = await prisma.user.findFirst({
+    where: { OR: [{ email }, { username }] },
+  });
+  if (existingUser) {
+    if (existingUser.email === email) {
+      throw new AppError(ERROR_CODES.EMAIL_EXISTS);
     }
+    throw new AppError(ERROR_CODES.ACCOUNT_EXISTS);
+  }
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(password, salt);
 
-    const otp = generateOtp();
-    const expiresAt = getOtpExpiry();
+  const otp = generateOtp();
+  const expiresAt = getOtpExpiry();
 
-    await prisma.pendingRegistration.deleteMany({ where: { email } });
+  const hasCricket = categories?.includes("Cricket") ?? false;
 
-    await prisma.pendingRegistration.create({
-      data: {
+  await prisma.pendingRegistration.deleteMany({ where: { email } });
+
+  await prisma.pendingRegistration.create({
+    data: {
+      email,
+      username,
+      otp,
+      expiresAt,
+      payload: {
         email,
         username,
-        otp,
-        expiresAt,
-        payload: {
-          email,
-          username,
-          name,
-          passwordHash,
-          role:       "organization",
-          contactNo:  contactNo,
-          websiteUrl: website_url ?? null,
-          city:       city        ?? null,
-          state:      state       ?? null,
-          country:    country     ?? null,
-          categories: categories ?? [],
-          height:     null,
-          weight:     null,
-          birthday:   null,
-          shouldCreateCricketProfile: false
-        } satisfies PendingPayload,
-      },
-    });
+        name,
+        passwordHash,
+        role:       "player",
+        contactNo:  contactNo,
+        height:     height      ?? null,
+        weight:     weight      ?? null,
+        birthday:   birthday    ? new Date(birthday).toISOString() : null,
+        categories: categories  ?? [],
+        websiteUrl: website_url ?? null,
+        city:       null,
+        state:      null,
+        country,
+        shouldCreateCricketProfile: hasCricket,
+      } satisfies PendingPayload,
+    },
+  });
 
-    await sendOtpEmail(email, otp);
-      console.log(otp)
-    res.status(200).json({
-      message: "OTP sent to your email. Please verify within 3 minutes.",
+  await sendOtpEmail(email, otp);
+  console.log(otp);
+
+  ResponseHandler.success(res, "OTP sent to your email. Please verify within 3 minutes.", { email });
+});
+
+export const registerOrganization = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    username, name, email, contactNo,
+    categories, website_url,
+    city, state, country, password,
+  } = req.body as OrganizationRegisterBody;
+
+  assertKnownSports(categories);
+
+  const existingUser = await prisma.user.findFirst({
+    where: { OR: [{ email }, { username }] },
+  });
+  if (existingUser) {
+    if (existingUser.email === email) {
+      throw new AppError(ERROR_CODES.EMAIL_EXISTS);
+    }
+    throw new AppError(ERROR_CODES.ACCOUNT_EXISTS);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(password, salt);
+
+  const otp = generateOtp();
+  const expiresAt = getOtpExpiry();
+
+  await prisma.pendingRegistration.deleteMany({ where: { email } });
+
+  await prisma.pendingRegistration.create({
+    data: {
       email,
-    });
-  } catch (error) {
-    console.error("Register organization error:", error);
-    res.status(500).json({ message: "Registration failed. Please try again." });
-  }
-};
+      username,
+      otp,
+      expiresAt,
+      payload: {
+        email,
+        username,
+        name,
+        passwordHash,
+        role:       "organization",
+        contactNo:  contactNo,
+        websiteUrl: website_url ?? null,
+        city:       city        ?? null,
+        state:      state       ?? null,
+        country:    country     ?? null,
+        categories: categories ?? [],
+        height:     null,
+        weight:     null,
+        birthday:   null,
+        shouldCreateCricketProfile: false,
+      } satisfies PendingPayload,
+    },
+  });
 
-export const playerCategory = async(req: Request, res: Response): Promise<void> => {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true },
-    });
-    res.json({ categories });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch categories' });
-  }
-}
+  await sendOtpEmail(email, otp);
+  console.log(otp);
 
+  ResponseHandler.success(res, "OTP sent to your email. Please verify within 3 minutes.", { email });
+});
 
-export const orgCategory = async(req: Request, res: Response): Promise<void> =>{
-  try {
-    const categories = await prisma.orgCategory.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true },
-    });
-    res.json({ categories });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch org categories' });
-  }
-}
+export const playerCategory = asyncHandler(async (req: Request, res: Response) => {
+  const categories = await prisma.sport.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+  ResponseHandler.success(res, "Data found.", { categories });
+});
+
+export const orgCategory = asyncHandler(async (req: Request, res: Response) => {
+  const categories = await prisma.orgCategory.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+  ResponseHandler.success(res, "Data found.", { categories });
+});

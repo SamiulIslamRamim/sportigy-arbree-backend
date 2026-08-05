@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BattingStyle, BowlingStyle, CricketPlayingRole } from "../generated/prisma/enums.js";
+
 
 export const playerRegisterSchema = z.object({
   username: z.string(),
@@ -23,17 +23,17 @@ export const playerInfo = z.object({
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name is too long"),
 
-  playingRole: z.nativeEnum(CricketPlayingRole, {
-    error: "Playing role is required",
-  }).nullable().optional(),
+  // playingRole: z.nativeEnum(CricketPlayingRole, {
+    // error: "Playing role is required",
+  // }).nullable().optional(),
 
-  battingStyle: z.nativeEnum(BattingStyle, {
-    error: "Batting style is required",
-  }).nullable().optional(),
+  // battingStyle: z.nativeEnum(BattingStyle, {
+    // error: "Batting style is required",
+  // }).nullable().optional(),
 
-  bowlingStyle: z.nativeEnum(BowlingStyle, {
-    error: "Bowling style is required",
-  }).nullable().optional(),
+  // bowlingStyle: z.nativeEnum(BowlingStyle, {
+    // error: "Bowling style is required",
+  // }).nullable().optional(),
 
   academy: z
     .string()
@@ -66,7 +66,7 @@ export const playerInfo = z.object({
   country: z
     .string()
     .trim()
-    .min(1, "Country is required").optional().nullable(),
+    .min(1, "Country is required"),
 });
 
 export const updatePlayerInformationSchema = z.object({
@@ -77,7 +77,7 @@ export const updatePlayerInformationSchema = z.object({
   birthday: z.string().optional().nullable(), // comes as "YYYY-MM-DD" string
   city: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
+  country: z.string().optional(),
   playingRole: z.enum(["WICKET_KEEPER", "BATSMAN", "BOWLER", "ALL_ROUNDER"]).optional().nullable(),
   battingStyle: z.enum(["RIGHT_HAND_BAT", "LEFT_HAND_BAT"]).optional().nullable(),
   bowlingStyle: z.enum(["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "LEFT_ARM_SPIN", "RIGHT_ARM_SPIN", "NONE"]).optional().nullable(),

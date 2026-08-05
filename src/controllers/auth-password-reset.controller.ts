@@ -1,30 +1,27 @@
+
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import otpGenerator from "otp-generator";
-import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type.js";
-import { prisma } from "../config/prisma.js";
-import { sendPasswordResetEmail } from "../utils/mailer.js";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type";
+import { AppError } from "../utils/AppError";
+import { ERROR_CODES } from "../constants/errorCodes";
+import { prisma } from "../config/prisma";
+import { sendPasswordResetEmail } from "../utils/mailer";
+import { ResponseHandler } from "../utils/Responsehandler";
 
-export const sendOtp = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email } = req.body as ForgotPasswordBody;
 
-    if (!email) {
-      res.status(400).json({ detail: "Email is required." });
-      return;
-    }
+export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body as ForgotPasswordBody;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+  if (!email) {
+    throw new AppError(ERROR_CODES.REQUIRED_FIELD_MISSING);
+  }
 
-    // Return same response whether user exists or not (security best practice)
-    // prevents email enumeration attacks
-    if (!user) {
-      res.status(200).json({
-        message: "If an account with that email exists, an OTP has been sent.",
-      });
-      return;
-    }
+  const user = await prisma.user.findUnique({ where: { email } });
 
+  // Same response whether user exists or not (prevents email enumeration)
+  if (user) {
     const otp = otpGenerator.generate(6, {
       digits: true,
       upperCaseAlphabets: false,
@@ -34,7 +31,6 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
 
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Delete any previous unused OTPs for this email
     await prisma.passwordReset.deleteMany({
       where: { email, used: false },
     });
@@ -43,44 +39,38 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
       data: { email, otp, expiresAt },
     });
 
-    await sendPasswordResetEmail(email, otp); // ← send real email
+    await sendPasswordResetEmail(email, otp);
     console.log(otp);
-    res.status(200).json({
-      message: "If an account with that email exists, an OTP has been sent.",
-    });
-  } catch (error) {
-    console.error("Send OTP error:", error);
-    res.status(500).json({ detail: "Internal server error" });
   }
-};
 
-export const verifyOtpAndReset = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, otp, newPassword } = req.body as ResetPasswordBody;
+  ResponseHandler.success(res, "If an account with that email exists, an OTP has been sent.", {});
+});
 
-    const resetRecord = await prisma.passwordReset.findFirst({
-      where: { email, otp, used: false, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: "desc" },
-    });
+export const verifyOtpAndReset = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body as ResetPasswordBody;
 
-    if (!resetRecord) {
-      res.status(400).json({ detail: "Invalid or expired OTP." });
-      return;
-    }
+  const resetRecord = await prisma.passwordReset.findFirst({
+    where: { email, otp, used: false },
+    orderBy: { createdAt: "desc" },
+  });
 
-    await prisma.passwordReset.update({
-      where: { id: resetRecord.id },
-      data: { used: true },
-    });
-
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(newPassword, salt);
-
-    await prisma.user.update({ where: { email }, data: { passwordHash } });
-
-    res.status(200).json({ message: "Password reset successfully." });
-  } catch (error) {
-    console.error("Reset password error:", error);
-    res.status(500).json({ detail: "Internal server error" });
+  if (!resetRecord) {
+    throw new AppError(ERROR_CODES.WRONG_CONFIRMATION_CODE);
   }
-};
+
+  if (new Date() > resetRecord.expiresAt) {
+    throw new AppError(ERROR_CODES.CONFIRMATION_CODE_EXPIRED);
+  }
+
+  await prisma.passwordReset.update({
+    where: { id: resetRecord.id },
+    data: { used: true },
+  });
+
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(newPassword, salt);
+
+  await prisma.user.update({ where: { email }, data: { passwordHash } });
+
+  ResponseHandler.success(res, "Password reset successfully.", {});
+});
