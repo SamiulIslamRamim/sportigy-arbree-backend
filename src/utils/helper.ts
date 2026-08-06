@@ -2,6 +2,7 @@ import z from "zod";
 import { ERROR_CODES } from "../constants/errorCodes";
 import { AppError } from "./AppError";
 import { prisma } from "../config/prisma";
+import { AuthenticatedRequest } from "../types/auth.type";
 
 const slugify = (value: string): string =>
   value
@@ -53,4 +54,9 @@ const assertFieldExists = async (fieldId: string): Promise<void> => {
   if (!field) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
 };
 
-export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists}
+const requireUserId = (req: AuthenticatedRequest): string => {
+  const userId = req.user?.id;
+  if (!userId) throw new AppError(ERROR_CODES.UNAUTHORIZED);
+  return userId;
+};
+export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId}

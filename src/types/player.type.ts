@@ -1,8 +1,4 @@
 import { z } from "zod";
-import { playerInfo, playerRegisterSchema } from "../schemas/player.schema.js";
+import { playerRegisterSchema } from "../schemas/player.schema";
 
-export type PlayerRegisterBody = z.infer<
-  typeof playerRegisterSchema
->;
-
-export type PlayerInfo = z.infer<typeof playerInfo>;
+export type PlayerRegisterBody = z.infer<typeof playerRegisterSchema>;

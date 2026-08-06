@@ -1,0 +1,22 @@
+import { Router } from "express";
+import { authenticate } from "../middleware/auth.js";
+import {
+  addSportProfile,
+  getBasicProfile,
+  getSportProfile,
+  listSportProfiles,
+  updateBasicProfile,
+  updateSportProfile,
+} from "../controllers/player/player-sportProfile.controller.js";
+
+const router = Router();
+
+// ─── Player Profile ────────────────────────────────────────────────────────────
+router.get("/player/profile", authenticate, getBasicProfile);
+router.patch("/player/profile", authenticate, updateBasicProfile);
+router.get("/player/sport-profiles", authenticate, listSportProfiles);
+router.post("/player/sport-profiles", authenticate, addSportProfile);
+router.get("/player/sport-profiles/:sportId", authenticate, getSportProfile);
+router.patch("/player/sport-profiles/:sportId", authenticate, updateSportProfile);
+
+export default router;

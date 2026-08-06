@@ -9,9 +9,9 @@ export interface PendingPayload {
   weight: string | null;
   birthday: string | null;
   categories: string[];
+  sportIds: string[];
   websiteUrl: string | null;
   city: string | null;
   state: string | null;
   country: string;
-  shouldCreateCricketProfile: boolean;
 }

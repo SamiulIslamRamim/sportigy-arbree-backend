@@ -1,24 +1,35 @@
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import { ResponseHandler } from "../utils/Responsehandler";
 import { prisma } from "../config/prisma";
-import { asyncHandler } from "../utils/asyncHandler";
-import { sendOtpEmail } from "../utils/mailer";
-import { PendingPayload } from "../types/pending_registration.type";
-import { generateOtp, getOtpExpiry } from "../utils/otp";
-import { ERROR_CODES } from "../constants/errorCodes";
 import { AppError } from "../utils/AppError";
-import { OrganizationRegisterBody } from "../types/organization.type";
+import { ERROR_CODES } from "../constants/errorCodes";
+import { asyncHandler } from "../utils/asyncHandler";
 import { PlayerRegisterBody } from "../types/player.type";
+import bcrypt from "bcryptjs";
+import { generateOtp, getOtpExpiry } from "../utils/otp";
+import { PendingPayload } from "../types/pending_registration.type";
+import { sendOtpEmail } from "../utils/mailer";
+import { ResponseHandler } from "../utils/Responsehandler";
+import { OrganizationRegisterBody } from "../types/organization.type";
 
-// Placeholder sport whitelist — finalize in Phase 2
-const KNOWN_SPORTS = ["Cricket", "Football", "Golf", "Table-Tennis", "Tennis", "Badminton"];
 
-const assertKnownSports = (categories?: string[]): void => {
-  const invalid = (categories ?? []).find((c) => !KNOWN_SPORTS.includes(c));
+const resolveSportIds = async (categories?: string[]): Promise<string[]> => {
+  const names = [...new Set((categories ?? []).map((c) => c.trim()).filter(Boolean))];
+  if (names.length === 0) return [];
+
+  const sports = await prisma.sport.findMany({
+    where: { name: { in: names }, isActive: true },
+    select: { id: true, name: true },
+  });
+
+  const found = new Set(sports.map((s) => s.name));
+  const invalid = names.find((n) => !found.has(n));
   if (invalid) {
-    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT);
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+      data: { categories: [`Unknown or inactive sport: ${invalid}`] },
+    });
   }
+
+  return sports.map((s) => s.id);
 };
 
 export const registerPlayer = asyncHandler(async (req: Request, res: Response) => {
@@ -28,7 +39,7 @@ export const registerPlayer = asyncHandler(async (req: Request, res: Response) =
     categories, website_url, password, country
   } = req.body as PlayerRegisterBody;
 
-  assertKnownSports(categories);
+  const sportIds = await resolveSportIds(categories);
 
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
@@ -45,8 +56,6 @@ export const registerPlayer = asyncHandler(async (req: Request, res: Response) =
 
   const otp = generateOtp();
   const expiresAt = getOtpExpiry();
-
-  const hasCricket = categories?.includes("Cricket") ?? false;
 
   await prisma.pendingRegistration.deleteMany({ where: { email } });
 
@@ -67,17 +76,21 @@ export const registerPlayer = asyncHandler(async (req: Request, res: Response) =
         weight:     weight      ?? null,
         birthday:   birthday    ? new Date(birthday).toISOString() : null,
         categories: categories  ?? [],
+        sportIds,
         websiteUrl: website_url ?? null,
         city:       null,
         state:      null,
         country,
-        shouldCreateCricketProfile: hasCricket,
       } satisfies PendingPayload,
     },
   });
 
-  await sendOtpEmail(email, otp);
+
+//note: remove comment when production
+// await sendOtpEmail(email, otp);
+//note: add comment when production
   console.log(otp);
+
 
   ResponseHandler.success(res, "OTP sent to your email. Please verify within 3 minutes.", { email });
 });
@@ -88,8 +101,6 @@ export const registerOrganization = asyncHandler(async (req: Request, res: Respo
     categories, website_url,
     city, state, country, password,
   } = req.body as OrganizationRegisterBody;
-
-  assertKnownSports(categories);
 
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
@@ -126,11 +137,11 @@ export const registerOrganization = asyncHandler(async (req: Request, res: Respo
         city:       city        ?? null,
         state:      state       ?? null,
         country:    country     ?? null,
-        categories: categories ?? [],
+        categories: categories  ?? [],
+        sportIds:   [],
         height:     null,
         weight:     null,
         birthday:   null,
-        shouldCreateCricketProfile: false,
       } satisfies PendingPayload,
     },
   });
@@ -141,12 +152,13 @@ export const registerOrganization = asyncHandler(async (req: Request, res: Respo
   ResponseHandler.success(res, "OTP sent to your email. Please verify within 3 minutes.", { email });
 });
 
-export const playerCategory = asyncHandler(async (req: Request, res: Response) => {
-  const categories = await prisma.sport.findMany({
-    orderBy: { name: 'asc' },
-    select: { id: true, name: true },
+export const listSports = asyncHandler(async (req: Request, res: Response) => {
+  const sports = await prisma.sport.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, slug: true, description: true },
   });
-  ResponseHandler.success(res, "Data found.", { categories });
+  ResponseHandler.success(res, "Data found.", { sports });
 });
 
 export const orgCategory = asyncHandler(async (req: Request, res: Response) => {

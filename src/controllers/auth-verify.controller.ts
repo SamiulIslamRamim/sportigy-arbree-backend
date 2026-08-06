@@ -10,7 +10,7 @@ import { PendingPayload } from "../types/pending_registration.type";
 import { verifyOtpSchema } from "../schemas/auth.schema";
 
 
-
+//todo: add prisma transition here in future
 export const verifyRegistrationOtp = asyncHandler(async (req: Request, res: Response) => {
   const result = verifyOtpSchema.safeParse(req.body);
   if (!result.success) {
@@ -57,16 +57,12 @@ export const verifyRegistrationOtp = asyncHandler(async (req: Request, res: Resp
     },
   });
 
-  if (payload.shouldCreateCricketProfile) {
-    // await prisma.playerSportProfile.create({
-    //   data: {
-    //     userId: user.id,
-    //     playingRole: null,
-    //     battingStyle: null,
-    //     bowlingStyle: null,
-    //     academy: null,
-    //   },
-    // });
+  const sportIds = payload.sportIds ?? [];
+  if (payload.role === "player" && sportIds.length > 0) {
+    await prisma.playerSportProfile.createMany({
+      data: sportIds.map((sportId) => ({ userId: user.id, sportId })),
+      skipDuplicates: true,
+    });
   }
 
   await prisma.pendingRegistration.delete({ where: { id: pending.id } });

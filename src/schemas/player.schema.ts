@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Gender } from "../generated/prisma/enums";
 
 
 export const playerRegisterSchema = z.object({
@@ -16,72 +17,37 @@ export const playerRegisterSchema = z.object({
 });
 
 
-export const playerInfo = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name is too long"),
-
-  // playingRole: z.nativeEnum(CricketPlayingRole, {
-    // error: "Playing role is required",
-  // }).nullable().optional(),
-
-  // battingStyle: z.nativeEnum(BattingStyle, {
-    // error: "Batting style is required",
-  // }).nullable().optional(),
-
-  // bowlingStyle: z.nativeEnum(BowlingStyle, {
-    // error: "Bowling style is required",
-  // }).nullable().optional(),
-
-  academy: z
-    .string()
-    .trim()
-    .max(100, "Academy name is too long")
-    .optional().nullable(),
-
-  weight: z
-    .string()
-    .trim()
-    .min(1, "Weight is required").optional(),
-
-  height: z
-    .string()
-    .trim()
-    .min(1, "Height is required").optional(),
-
-  birthday: z.coerce.date().optional(),
-
-  city: z
-    .string()
-    .trim()
-    .min(1, "City is required").optional().nullable(),
-
-  state: z
-    .string()
-    .trim()
-    .min(1, "State is required").optional().nullable(),
-
-  country: z
-    .string()
-    .trim()
-    .min(1, "Country is required"),
+export const sportProfileParamsSchema = z.object({
+  sportId: z.uuid("Invalid sport id"),
 });
 
-export const updatePlayerInformationSchema = z.object({
-  name: z.string().min(1),
-  academy: z.string().optional().nullable(),
-  weight: z.string().optional().nullable(),
-  height: z.string().optional().nullable(),
-  birthday: z.string().optional().nullable(), // comes as "YYYY-MM-DD" string
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-  country: z.string().optional(),
-  playingRole: z.enum(["WICKET_KEEPER", "BATSMAN", "BOWLER", "ALL_ROUNDER"]).optional().nullable(),
-  battingStyle: z.enum(["RIGHT_HAND_BAT", "LEFT_HAND_BAT"]).optional().nullable(),
-  bowlingStyle: z.enum(["RIGHT_ARM_FAST", "LEFT_ARM_FAST", "LEFT_ARM_SPIN", "RIGHT_ARM_SPIN", "NONE"]).optional().nullable(),
-})
+
+export const updateBasicProfileSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long").optional(),
+  bio: z.string().trim().max(500, "Bio is too long").optional().nullable(),
+  gender: z.nativeEnum(Gender, { error: "Invalid gender" }).optional().nullable(),
+  birthday: z.coerce.date().optional().nullable(),
+  height: z.string().trim().max(20, "Height is too long").optional().nullable(),
+  weight: z.string().trim().max(20, "Weight is too long").optional().nullable(),
+  contactNo: z.string().trim().max(20, "Contact number is too long").optional().nullable(),
+  city: z.string().trim().max(100, "City is too long").optional().nullable(),
+  state: z.string().trim().max(100, "State is too long").optional().nullable(),
+  country: z.string().trim().max(100, "Country is too long").optional(),
+});
 
 
+export const addSportProfileSchema = z.object({
+  sportId: z.uuid("Invalid sport id"),
+  academy: z.string().trim().max(100, "Academy name is too long").optional().nullable(),
+});
+
+const sportProfileValueSchema = z.object({
+  fieldId: z.uuid("Invalid field id"),
+  optionId: z.uuid("Invalid option id"),
+});
+
+export const updateSportProfileSchema = z.object({
+  academy: z.string().trim().max(100, "Academy name is too long").optional().nullable(),
+  values: z.array(sportProfileValueSchema).max(200, "Too many field values").optional(),
+});
 
