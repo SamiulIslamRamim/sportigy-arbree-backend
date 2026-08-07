@@ -1,86 +1,49 @@
-model Match {
-  id String @id @default(uuid()) @db.Uuid
-
-  sportId String @map("sport_id") @db.Uuid
-
-  sport Sport @relation(fields: [sportId], references: [id], onDelete: Restrict)
-
-  sportCategoryId String? @map("sport_category_id") @db.Uuid
-
-  sportCategory SportCategory? @relation(fields: [sportCategoryId], references: [id], onDelete: SetNull)
-
-  title String?
-
-  tournament String?
-
-  matchType String? @map("match_type")
-
-  venue String?
-
-  homeTeam String? @map("home_team")
-
-  awayTeam String? @map("away_team")
-
-  matchDate DateTime @map("match_date")
-
-  result MatchResult
-
-  notes String?
-
-  isActive Boolean @default(true) @map("is_active")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  playerMatches PlayerMatch[]
-
-  @@index([sportId])
-
-  @@index([matchDate])
-
-  @@index([sportCategoryId])
-
-  @@map("matches")
-}
 
 model PlayerMatch {
-
   id String @id @default(uuid()) @db.Uuid
 
-  matchId String @map("match_id") @db.Uuid
-
-  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-
   userId String @map("player_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sportId String @map("sport_id") @db.Uuid
+  sport   Sport  @relation(fields: [sportId], references: [id], onDelete: Restrict)
 
-  playerTeam String? @map("player_team")
+  sportCategoryId String?        @map("sport_category_id") @db.Uuid
+  sportCategory   SportCategory? @relation(fields: [sportCategoryId], references: [id], onDelete: SetNull)
 
-  isCaptain Boolean @default(false) @map("is_captain")
+  title       String?
+  tournament  String?
+  matchType   String? @map("match_type")
+  venue       String?
+  homeTeam    String? @map("home_team")
+  awayTeam    String? @map("away_team")
+  matchDate   DateTime @map("match_date")
+  result      MatchResult
 
-  isSubstitute Boolean @default(false) @map("is_substitute")
+  playerTeam    String?  @map("player_team")
+  isCaptain     Boolean  @default(false) @map("is_captain")
+  isSubstitute  Boolean  @default(false) @map("is_substitute")
+  minutesPlayed Int?     @map("minutes_played")
+  notes         String?
 
-  minutesPlayed Int? @map("minutes_played")
-
-  notes String?
+  status       ApprovalStatus @default(PENDING)
+  reviewedBy   String?        @map("reviewed_by") @db.Uuid
+  reviewedAt   DateTime?      @map("reviewed_at")
+  rejectReason String?        @map("reject_reason")
 
   values PlayerMatchFieldValue[]
 
   createdAt DateTime @default(now()) @map("created_at")
-
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([matchId, userId])
-
   @@index([userId])
-
-  @@index([matchId])
-
+  @@index([sportId])
+  @@index([matchDate])
+  @@index([status])
   @@map("player_matches")
 }
-//note: personal data will be in in option, valueNumber, valueText, valueBoolean,
+
+//note: personal data will be in option, valueNumber, valueText, valueBoolean
 model PlayerMatchFieldValue {
 
   id String @id @default(uuid()) @db.Uuid

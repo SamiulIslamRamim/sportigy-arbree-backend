@@ -32,6 +32,7 @@ import {
   getFieldOptions,
   updateFieldOption,
 } from "../controllers/admin/admin-sportFieldOption.controller.js";
+import { approveMatch, getMatchSubmission, listMatchSubmissions, rejectMatch } from "../controllers/admin/admin-match.controller.js";
 
 const router = Router();
 
@@ -64,5 +65,13 @@ router.get("/admin/fields/:fieldId/options/", authenticateAdmin, getFieldOptions
 router.post("/admin/fields/:fieldId/options/", authenticateAdmin, createFieldOption,);
 router.patch("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, updateFieldOption,);
 router.delete("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, deleteFieldOption,);
+
+
+// ─── Admin Match Review ────────────────────────────────────────────────────────
+router.get("/admin/matches/", authenticateAdmin, listMatchSubmissions);
+router.get("/admin/matches/:matchId/", authenticateAdmin, getMatchSubmission);
+router.patch("/admin/matches/:matchId/approve/", authenticateAdmin, approveMatch);
+router.patch("/admin/matches/:matchId/reject/", authenticateAdmin, rejectMatch);
+
 
 export default router;

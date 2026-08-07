@@ -20,7 +20,7 @@ model Sport {
 
   profiles PlayerSportProfile[]
 
-  matches Match[]
+  playerMatches PlayerMatch[]
 
   // organizations OrganizationSport[]
 
@@ -51,7 +51,7 @@ model SportCategory {
 
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  matches Match[]
+  playerMatches PlayerMatch[]
 
   @@unique([sportId, slug])
 

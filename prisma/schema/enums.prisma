@@ -30,3 +30,9 @@ enum Gender {
   female
   other
 }
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
