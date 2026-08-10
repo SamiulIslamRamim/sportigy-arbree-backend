@@ -5,7 +5,7 @@ import { AppError } from "../../utils/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { ResponseHandler } from "../../utils/Responsehandler";
-import { assertNonEmptyUpdate, fetchPlayerMatches, parseBody, parseParams, requireUserId, validateMatchValues } from "../../utils/helper";
+import { assertNonEmptyUpdate, assertPlayerSideMatchesTeam, derivePlayerMatch, fetchPlayerMatches, parseBody, parseParams, requireUserId, resolveTeamSlot, teamOrgInclude, validateMatchValues } from "../../utils/helper";
 import { createMatchSchema, matchParamsSchema, updateMatchSchema } from "../../schemas/match.schema";
 import { ApprovalStatus } from "../../generated/prisma/client";
 
@@ -35,6 +35,10 @@ export const createMatch = asyncHandler(
       const values = body.values ?? [];
       const validated = await validateMatchValues(tx, body.sportId, values);
 
+      const home = body.homeTeam !== undefined ? await resolveTeamSlot(tx, body.homeTeam) : { name: null, orgId: null };
+      const away = body.awayTeam !== undefined ? await resolveTeamSlot(tx, body.awayTeam) : { name: null, orgId: null };
+      assertPlayerSideMatchesTeam(body.playerSide, home, away);
+
       const created = await tx.playerMatch.create({
         data: {
           userId,
@@ -44,28 +48,22 @@ export const createMatch = asyncHandler(
           ...(body.tournament !== undefined && { tournament: body.tournament }),
           ...(body.matchType !== undefined && { matchType: body.matchType }),
           ...(body.venue !== undefined && { venue: body.venue }),
-          ...(body.homeTeam !== undefined && { homeTeam: body.homeTeam }),
-          ...(body.awayTeam !== undefined && { awayTeam: body.awayTeam }),
+          ...(body.homeTeam !== undefined && { homeTeam: home.name, homeTeamOrgId: home.orgId }),
+          ...(body.awayTeam !== undefined && { awayTeam: away.name, awayTeamOrgId: away.orgId }),
+          ...(body.playerSide !== undefined && { playerSide: body.playerSide }),
           matchDate: body.matchDate,
           result: body.result,
-          ...(body.playerTeam !== undefined && { playerTeam: body.playerTeam }),
           ...(body.isCaptain !== undefined && { isCaptain: body.isCaptain }),
           ...(body.isSubstitute !== undefined && { isSubstitute: body.isSubstitute }),
           ...(body.minutesPlayed !== undefined && { minutesPlayed: body.minutesPlayed }),
           ...(body.notes !== undefined && { notes: body.notes }),
           ...(validated.length > 0 && { values: { create: validated } }),
         },
-        include: {
-          values: {
-            include: {
-              field: { select: { id: true, name: true, slug: true, type: true } },
-              option: { select: { id: true, label: true, value: true } },
-            },
-          },
-        },
+        include: { ...teamOrgInclude, values: { include: { field: { select: { id: true, name: true, slug: true, type: true } }, option: { select: { id: true, label: true, value: true } } } } },
       });
 
-      return created;
+      return derivePlayerMatch(created);
+
     });
 
     ResponseHandler.success(res, "Match submitted for approval.", { submission }, 201);
@@ -114,6 +112,7 @@ export const getMatch = asyncHandler(
       include: {
         sport: { select: { id: true, name: true, slug: true } },
         sportCategory: { select: { id: true, name: true, slug: true } },
+        ...teamOrgInclude,
         values: {
           include: {
             field: { select: { id: true, name: true, slug: true, type: true } },
@@ -140,12 +139,9 @@ export const updateMatch = asyncHandler(
         where: { id: matchId, userId },
       });
       if (!existing) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
-      if (
-  existing.status !== ApprovalStatus.PENDING &&
-  existing.status !== ApprovalStatus.APPROVED
-) {
-  throw new AppError(ERROR_CODES.OPERATION_NOT_ALLOWED);
-}
+      if (existing.status !== ApprovalStatus.PENDING) {
+        throw new AppError(ERROR_CODES.OPERATION_NOT_ALLOWED);
+      }
 
       if (body.sportCategoryId !== undefined && body.sportCategoryId !== null) {
         const category = await tx.sportCategory.findFirst({
@@ -155,20 +151,29 @@ export const updateMatch = asyncHandler(
         if (!category) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
       }
 
-      const updated = await tx.playerMatch.update({
+      const home = body.homeTeam !== undefined
+        ? await resolveTeamSlot(tx, body.homeTeam)
+        : { name: existing.homeTeam ?? null, orgId: existing.homeTeamOrgId ?? null };
+      const away = body.awayTeam !== undefined
+        ? await resolveTeamSlot(tx, body.awayTeam)
+        : { name: existing.awayTeam ?? null, orgId: existing.awayTeamOrgId ?? null };
+      const effectiveSide = body.playerSide !== undefined ? body.playerSide : existing.playerSide;
+      assertPlayerSideMatchesTeam(effectiveSide ?? undefined, home, away);
+
+      await tx.playerMatch.update({
         where: { id: existing.id },
         data: {
-            status: ApprovalStatus.PENDING,
+          status: ApprovalStatus.PENDING,
           ...(body.sportCategoryId !== undefined && { sportCategoryId: body.sportCategoryId }),
+          ...(body.homeTeam !== undefined && { homeTeam: home.name, homeTeamOrgId: home.orgId }),
+          ...(body.awayTeam !== undefined && { awayTeam: away.name, awayTeamOrgId: away.orgId }),
+          ...(body.playerSide !== undefined && { playerSide: body.playerSide }),
           ...(body.title !== undefined && { title: body.title }),
           ...(body.tournament !== undefined && { tournament: body.tournament }),
           ...(body.matchType !== undefined && { matchType: body.matchType }),
           ...(body.venue !== undefined && { venue: body.venue }),
-          ...(body.homeTeam !== undefined && { homeTeam: body.homeTeam }),
-          ...(body.awayTeam !== undefined && { awayTeam: body.awayTeam }),
           ...(body.matchDate !== undefined && { matchDate: body.matchDate }),
           ...(body.result !== undefined && { result: body.result }),
-          ...(body.playerTeam !== undefined && { playerTeam: body.playerTeam }),
           ...(body.isCaptain !== undefined && { isCaptain: body.isCaptain }),
           ...(body.isSubstitute !== undefined && { isSubstitute: body.isSubstitute }),
           ...(body.minutesPlayed !== undefined && { minutesPlayed: body.minutesPlayed }),
@@ -186,17 +191,11 @@ export const updateMatch = asyncHandler(
         }
       }
 
-      return tx.playerMatch.findUniqueOrThrow({
+      const updated = await tx.playerMatch.findUniqueOrThrow({
         where: { id: existing.id },
-        include: {
-          values: {
-            include: {
-              field: { select: { id: true, name: true, slug: true, type: true } },
-              option: { select: { id: true, label: true, value: true } },
-            },
-          },
-        },
+        include: { ...teamOrgInclude, values: { include: { field: { select: { id: true, name: true, slug: true, type: true } }, option: { select: { id: true, label: true, value: true } } } } },
       });
+      return derivePlayerMatch(updated);
     });
 
     ResponseHandler.success(res, "Match updated successfully.", { submission });

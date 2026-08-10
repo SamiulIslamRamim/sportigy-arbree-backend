@@ -13,3 +13,9 @@ export const organizationRegisterSchema = z.object({
   password: z.string().min(6),
 });
 
+
+export const organizationSearchQuerySchema = z.object({
+  q: z.string().trim().max(100, "Search query is too long").optional(),
+  limit: z.coerce.number().int().min(1, "Limit must be at least 1").max(100, "Limit max is 100").default(20),
+});
+

@@ -3,9 +3,9 @@ import { ERROR_CODES } from "../constants/errorCodes";
 import { AppError } from "./AppError";
 import { prisma } from "../config/prisma";
 import { AuthenticatedRequest } from "../types/auth.type";
-import { ApprovalStatus, FieldSection, FieldType } from "../generated/prisma/enums";
+import { ApprovalStatus, FieldSection, FieldType, PlayerSide, UserRole } from "../generated/prisma/enums";
 import { Prisma } from "../generated/prisma/client";
-import { MatchFieldValueInput } from "../schemas/match.schema";
+import { MatchFieldValueInput, TeamSlotValue } from "../schemas/match.schema";
 
 const slugify = (value: string): string =>
   value
@@ -65,16 +65,8 @@ const assertFieldExists = async (fieldId: string): Promise<void> => {
 };
 
 //match-helper
-const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus) => {
-  return prisma.playerMatch.findMany({
-    where: { userId, ...(status !== undefined && { status }) },
-    orderBy: { createdAt: "desc" },
-    include: {
-      sport: { select: { id: true, name: true, slug: true } },
-      sportCategory: { select: { id: true, name: true, slug: true } },
-    },
-  });
-};
+
+
 
 const validateMatchValues = async (
   tx: Prisma.TransactionClient,
@@ -156,4 +148,83 @@ const validateMatchValues = async (
 };
 
 
-export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues}
+const resolveTeamSlot = async (
+  tx: Prisma.TransactionClient,
+  input: TeamSlotValue | null,
+): Promise<TeamResult> => {
+  if (input === null) return { name: null, orgId: null };
+
+  if (typeof input === "string") return { name: input, orgId: null };
+
+  if ("orgId" in input) {
+    const org = await tx.user.findUnique({
+      where: { id: input.orgId },
+      select: { id: true, name: true, role: true, isActive: true },
+    });
+    if (!org || org.role !== UserRole.organization || !org.isActive || !org.name) {
+      throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+        data: { orgId: "Unknown, inactive, or not an organization" },
+      });
+    }
+    return { name: org.name, orgId: org.id };
+  }
+
+  return { name: input.name, orgId: null };
+};
+
+const assertPlayerSideMatchesTeam = (
+  side: PlayerSide | undefined,
+  home: TeamResult,
+  away: TeamResult,
+): void => {
+  if (side === PlayerSide.HOME && home.name === null) {
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+      data: { playerSide: "playerSide HOME requires a home team" },
+    });
+  }
+  if (side === PlayerSide.AWAY && away.name === null) {
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+      data: { playerSide: "playerSide AWAY requires an away team" },
+    });
+  }
+};
+
+const teamOrgInclude = {
+  homeTeamOrg: { select: { id: true, name: true } },
+  awayTeamOrg: { select: { id: true, name: true } },
+} as const;
+
+const derivePlayerMatch = <T extends {
+  homeTeam: string | null;
+  awayTeam: string | null;
+  playerSide: PlayerSide | null;
+  homeTeamOrgId: string | null;
+  awayTeamOrgId: string | null;
+  homeTeamOrg: { id: string; name: string } | null;
+  awayTeamOrg: { id: string; name: string } | null;
+}>(match: T) => ({
+  ...match,
+  playerTeam: match.playerSide === PlayerSide.HOME ? match.homeTeam : match.playerSide === PlayerSide.AWAY ? match.awayTeam : null,
+  playerTeamOrgId: match.playerSide === PlayerSide.HOME ? match.homeTeamOrgId : match.playerSide === PlayerSide.AWAY ? match.awayTeamOrgId : null,
+  playerTeamOrg: match.playerSide === PlayerSide.HOME ? match.homeTeamOrg : match.playerSide === PlayerSide.AWAY ? match.awayTeamOrg : null,
+});
+
+const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus) => {
+  const rows = await prisma.playerMatch.findMany({
+    where: { userId, ...(status !== undefined && { status }) },
+    orderBy: { createdAt: "desc" },
+    include: {
+      sport: { select: { id: true, name: true, slug: true } },
+      sportCategory: { select: { id: true, name: true, slug: true } },
+      ...teamOrgInclude,
+    },
+  });
+  return rows.map(derivePlayerMatch);
+};
+
+export type TeamResult = { name: string | null; orgId: string | null };
+
+
+
+
+export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues, resolveTeamSlot, assertPlayerSideMatchesTeam, teamOrgInclude, derivePlayerMatch}

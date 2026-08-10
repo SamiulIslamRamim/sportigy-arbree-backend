@@ -36,3 +36,8 @@ enum ApprovalStatus {
   APPROVED
   REJECTED
 }
+
+enum PlayerSide {
+  HOME
+  AWAY
+}

@@ -15,12 +15,22 @@ model PlayerMatch {
   tournament  String?
   matchType   String? @map("match_type")
   venue       String?
-  homeTeam    String? @map("home_team")
-  awayTeam    String? @map("away_team")
+
+
+  homeTeam      String?     @map("home_team")
+  homeTeamOrgId String?     @map("home_team_org_id") @db.Uuid
+  homeTeamOrg   User?       @relation("PlayerMatchHomeTeamOrg", fields: [homeTeamOrgId], references: [id], onDelete: SetNull)
+
+  awayTeam      String?     @map("away_team")
+  awayTeamOrgId String?     @map("away_team_org_id") @db.Uuid
+  awayTeamOrg   User?       @relation("PlayerMatchAwayTeamOrg", fields: [awayTeamOrgId], references: [id], onDelete: SetNull)
+
+  playerSide    PlayerSide? @map("player_side")
+
   matchDate   DateTime @map("match_date")
   result      MatchResult
 
-  playerTeam    String?  @map("player_team")
+
   isCaptain     Boolean  @default(false) @map("is_captain")
   isSubstitute  Boolean  @default(false) @map("is_substitute")
   minutesPlayed Int?     @map("minutes_played")

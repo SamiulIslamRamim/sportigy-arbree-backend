@@ -13,6 +13,8 @@ const MATCH_DETAIL_INCLUDE = {
   sport: { select: { id: true, name: true, slug: true } },
   sportCategory: { select: { id: true, name: true, slug: true } },
   user: { select: { id: true, name: true, username: true, email: true } },
+  homeTeamOrg: { select: { id: true, name: true } },
+  awayTeamOrg: { select: { id: true, name: true } },
   values: {
     include: {
       field: { select: { id: true, name: true, slug: true, type: true } },
@@ -20,6 +22,7 @@ const MATCH_DETAIL_INCLUDE = {
     },
   },
 } as const;
+
 
 export const listMatchSubmissions = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {

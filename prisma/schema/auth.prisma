@@ -4,7 +4,7 @@ model User {
   username     String    @unique
   passwordHash String    @map("password_hash")
   role         UserRole  @default(player)
-  name         String?
+  name         String
   contactNo    String?   @map("contact_no")
   bio          String?
   height       String?
@@ -24,6 +24,8 @@ model User {
   // sports OrganizationSport[]
   sportProfiles PlayerSportProfile[]
   playerMatches PlayerMatch[]
+  playerMatchesAsHomeTeamOrg PlayerMatch[] @relation("PlayerMatchHomeTeamOrg")
+  playerMatchesAsAwayTeamOrg PlayerMatch[] @relation("PlayerMatchAwayTeamOrg")
 
   @@index([isActive])
   @@index([email])
