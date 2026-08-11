@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/config/prisma";
+import { seedOrganizations } from "./seeds/org.seed";
+import { seedSports } from "./seeds/sport.seed";
 
 
 async function main() {
@@ -12,17 +14,11 @@ async function main() {
   });
 
   // Seed Organization Categories
-  await prisma.orgCategory.createMany({
-    data: [
-      { name: "Academy" },
-      { name: "Bank" },
-      { name: "School" },
-      { name: "Others" },
-    ],
-    skipDuplicates: true,
-  });
+  await seedOrganizations();
+  //seed sport, category, field, fieldOption
+  await seedSports();
 
-  console.log("Admin and Organization Categories seeded successfully!");
+  console.log("DB seeded successfully!");
 }
 
 main()
