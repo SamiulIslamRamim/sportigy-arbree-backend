@@ -22,6 +22,8 @@ model Sport {
 
   playerMatches PlayerMatch[]
 
+  teamVisibility PlayerTeamVisibility[]
+
   // organizations OrganizationSport[]
 
   @@index([slug])

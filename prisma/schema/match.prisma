@@ -50,6 +50,7 @@ model PlayerMatch {
   @@index([sportId])
   @@index([matchDate])
   @@index([status])
+  @@index([userId, sportId, status])
   @@map("player_matches")
 }
 
@@ -66,7 +67,7 @@ model PlayerMatchFieldValue {
 
   valueText String? @map("value_text")
 
-  valueNumber Int? @map("value_number")
+  valueNumber Decimal? @db.Decimal(12,2) @map("value_number")
 
   valueBoolean Boolean? @map("value_boolean")
 
@@ -89,4 +90,24 @@ model PlayerMatchFieldValue {
   @@index([fieldId])
 
   @@map("player_match_field_values")
+}
+
+
+model PlayerTeamVisibility {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("player_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sportId String @map("sport_id") @db.Uuid
+  sport   Sport  @relation(fields: [sportId], references: [id], onDelete: Cascade)
+
+  // "org:<uuid>" for verified teams, "name:<normalized>" for free-text
+  teamKey   String @map("team_key")
+  teamLabel String @map("team_label")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, sportId, teamKey])
+  @@map("player_team_visibility")
 }

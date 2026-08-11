@@ -222,9 +222,22 @@ const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus) => {
   return rows.map(derivePlayerMatch);
 };
 
-export type TeamResult = { name: string | null; orgId: string | null };
+//career-stats-helper
+// Keep in sync with the SQL team_key CASE in career-stats.controller.ts buildSideCte().
+const normalizeTeamName = (name: string): string => name.trim().toLowerCase();
 
+const teamKeyFor = (input: { teamOrgId?: string | null | undefined; teamName?: string | null | undefined}): string | null => {
+  if (input.teamOrgId) return `org:${input.teamOrgId}`;
+  if (input.teamName) return `name:${normalizeTeamName(input.teamName)}`;
+  return null;
+  }
 
+  
+  
+  
 
-
-export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues, resolveTeamSlot, assertPlayerSideMatchesTeam, teamOrgInclude, derivePlayerMatch}
+  export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues, resolveTeamSlot, assertPlayerSideMatchesTeam, teamOrgInclude, derivePlayerMatch, teamKeyFor}
+  
+  
+  
+  export type TeamResult = { name: string | null; orgId: string | null };

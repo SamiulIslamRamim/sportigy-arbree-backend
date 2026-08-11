@@ -9,6 +9,7 @@ import {
   updateSportProfile,
 } from "../controllers/player/player-sportProfile.controller.js";
 import { createMatch, deleteMatch, getMatch, listApprovedMatches, listMatches, listPendingMatches, listRejectedMatches, updateMatch } from "../controllers/player/player-match.controller.js";
+import { getCareerByTeam, getCareerStats, hideTeam, unhideTeam } from "../controllers/player/player-careerStat.controller.js";
 
 const router = Router();
 
@@ -29,5 +30,11 @@ router.get("/player/matches/rejected/", authenticate, listRejectedMatches);
 router.get("/player/matches/:matchId/", authenticate, getMatch);
 router.patch("/player/matches/:matchId/", authenticate, updateMatch);
 router.delete("/player/matches/:matchId/", authenticate, deleteMatch);
+
+// ─── Player Career Stats + Team Visibility (Phase 5) ─────────────────────────
+router.get("/player/matches/stats/career/", authenticate, getCareerStats);
+router.get("/player/matches/stats/by-team/", authenticate, getCareerByTeam);
+router.post("/player/matches/team-visibility/", authenticate, hideTeam);
+router.delete("/player/matches/team-visibility/", authenticate, unhideTeam);
 
 export default router;

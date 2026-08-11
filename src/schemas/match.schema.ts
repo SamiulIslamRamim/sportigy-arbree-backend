@@ -13,7 +13,7 @@ export const matchFieldValueSchema = z.object({
   fieldId: z.uuid("Invalid field id"),
   optionId: z.uuid("Invalid option id").optional(),
   valueText: z.string().max(500, "Text value is too long").optional(),
-  valueNumber: z.number().int().min(-100000).max(100000).optional(),
+  valueNumber: z.number().min(-100000).max(100000).optional(),
   valueBoolean: z.boolean().optional(),
   valueDate: z.coerce.date().optional(),
 });
