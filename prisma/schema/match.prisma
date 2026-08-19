@@ -1,4 +1,3 @@
-
 model PlayerMatch {
   id String @id @default(uuid()) @db.Uuid
 
@@ -11,29 +10,27 @@ model PlayerMatch {
   sportCategoryId String?        @map("sport_category_id") @db.Uuid
   sportCategory   SportCategory? @relation(fields: [sportCategoryId], references: [id], onDelete: SetNull)
 
-  title       String?
-  tournament  String?
-  matchType   String? @map("match_type")
-  venue       String?
+  title      String?
+  tournament String?
+  matchType  String? @map("match_type")
+  venue      String?
 
+  homeTeam      String? @map("home_team")
+  homeTeamOrgId String? @map("home_team_org_id") @db.Uuid
+  homeTeamOrg   User?   @relation("PlayerMatchHomeTeamOrg", fields: [homeTeamOrgId], references: [id], onDelete: SetNull)
 
-  homeTeam      String?     @map("home_team")
-  homeTeamOrgId String?     @map("home_team_org_id") @db.Uuid
-  homeTeamOrg   User?       @relation("PlayerMatchHomeTeamOrg", fields: [homeTeamOrgId], references: [id], onDelete: SetNull)
+  awayTeam      String? @map("away_team")
+  awayTeamOrgId String? @map("away_team_org_id") @db.Uuid
+  awayTeamOrg   User?   @relation("PlayerMatchAwayTeamOrg", fields: [awayTeamOrgId], references: [id], onDelete: SetNull)
 
-  awayTeam      String?     @map("away_team")
-  awayTeamOrgId String?     @map("away_team_org_id") @db.Uuid
-  awayTeamOrg   User?       @relation("PlayerMatchAwayTeamOrg", fields: [awayTeamOrgId], references: [id], onDelete: SetNull)
+  playerSide PlayerSide? @map("player_side")
 
-  playerSide    PlayerSide? @map("player_side")
+  matchDate DateTime    @map("match_date")
+  result    MatchResult
 
-  matchDate   DateTime @map("match_date")
-  result      MatchResult
-
-
-  isCaptain     Boolean  @default(false) @map("is_captain")
-  isSubstitute  Boolean  @default(false) @map("is_substitute")
-  minutesPlayed Int?     @map("minutes_played")
+  isCaptain     Boolean @default(false) @map("is_captain")
+  isSubstitute  Boolean @default(false) @map("is_substitute")
+  minutesPlayed Int?    @map("minutes_played")
   notes         String?
 
   status       ApprovalStatus @default(PENDING)
@@ -56,7 +53,6 @@ model PlayerMatch {
 
 //note: personal data will be in option, valueNumber, valueText, valueBoolean
 model PlayerMatchFieldValue {
-
   id String @id @default(uuid()) @db.Uuid
 
   playerMatchId String @map("player_match_id") @db.Uuid
@@ -67,11 +63,11 @@ model PlayerMatchFieldValue {
 
   valueText String? @map("value_text")
 
-  valueNumber Decimal? @db.Decimal(12,2) @map("value_number")
+  valueNumber Decimal? @map("value_number") @db.Decimal(12, 2)
 
   valueBoolean Boolean? @map("value_boolean")
 
-  valueDate DateTime? @db.Date @map("value_date")
+  valueDate DateTime? @map("value_date") @db.Date
 
   playerMatch PlayerMatch @relation(fields: [playerMatchId], references: [id], onDelete: Cascade)
 
@@ -84,14 +80,10 @@ model PlayerMatchFieldValue {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([playerMatchId, fieldId])
-
   @@index([playerMatchId])
-
   @@index([fieldId])
-
   @@map("player_match_field_values")
 }
-
 
 model PlayerTeamVisibility {
   id String @id @default(uuid()) @db.Uuid

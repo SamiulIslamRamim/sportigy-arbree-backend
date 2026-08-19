@@ -1,5 +1,4 @@
 model Sport {
-
   id String @id @default(uuid()) @db.Uuid
 
   name String @unique
@@ -18,6 +17,8 @@ model Sport {
 
   fields SportField[]
 
+  metrics SportMetric[]
+
   profiles PlayerSportProfile[]
 
   playerMatches PlayerMatch[]
@@ -27,14 +28,11 @@ model Sport {
   // organizations OrganizationSport[]
 
   @@index([slug])
-
   @@index([isActive])
-
   @@map("sports")
 }
 
 model SportCategory {
-
   id String @id @default(uuid()) @db.Uuid
 
   sportId String @map("sport_id") @db.Uuid
@@ -56,12 +54,9 @@ model SportCategory {
   playerMatches PlayerMatch[]
 
   @@unique([sportId, slug])
-
   @@index([sportId])
-
   @@map("sport_categories")
 }
-
 
 //note: store fields for player profile and sports contains. e,g, playingrole
 model SportField {
@@ -98,6 +93,13 @@ model SportField {
 
   displayOrder Int @default(0) @map("display_order")
 
+  metricId String?      @map("metric_id") @db.Uuid
+  metric   SportMetric? @relation(fields: [metricId], references: [id], onDelete: SetNull)
+
+  // Computed fields: value is never player-entered, derived via formula components.
+  isComputed        Boolean  @default(false) @map("is_computed")
+  formulaMultiplier Decimal? @map("formula_multiplier") @db.Decimal(6, 2)
+
   // Used only for MATCH fields
   //aggregation AggregationType @default(NONE)
 
@@ -109,23 +111,23 @@ model SportField {
 
   options SportFieldOption[]
 
+  formulaComponents SportFieldFormulaComponent[] @relation("ComputedFieldComponents")
+
+  usedInFormulas SportFieldFormulaComponent[] @relation("SourceFieldUsedIn")
+
   playerValues PlayerFieldValue[]
 
   matchValues PlayerMatchFieldValue[]
 
   @@unique([sportId, section, slug])
-
   @@index([sportId])
-
   @@index([section])
-
   @@index([isActive])
-
   @@map("sport_fields")
 }
+
 //note: add fields for player profile and sports contains. e,g, weeket keeper
 model SportFieldOption {
-
   id String @id @default(uuid()) @db.Uuid
 
   fieldId String @map("field_id") @db.Uuid
@@ -154,14 +156,56 @@ model SportFieldOption {
   matchValues  PlayerMatchFieldValue[]
 
   @@unique([fieldId, value])
-
   @@index([fieldId, isActive])
-
   @@map("sport_field_options")
 }
-//note: track sportfield & sportFieldValue for each player
-model PlayerFieldValue {
 
+model SportMetric {
+  id String @id @default(uuid()) @db.Uuid
+
+  sportId String @map("sport_id") @db.Uuid
+
+  sport Sport @relation(fields: [sportId], references: [id], onDelete: Cascade)
+
+  name String
+
+  slug String
+
+  displayOrder Int @default(0) @map("display_order")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  fields SportField[]
+
+  @@unique([sportId, slug])
+  @@index([sportId])
+  @@map("sport_metrics")
+}
+
+model SportFieldFormulaComponent {
+  id String @id @default(uuid()) @db.Uuid
+
+  computedFieldId String @map("computed_field_id") @db.Uuid
+
+  computedField SportField @relation("ComputedFieldComponents", fields: [computedFieldId], references: [id], onDelete: Cascade)
+
+  sourceFieldId String @map("source_field_id") @db.Uuid
+
+  sourceField SportField @relation("SourceFieldUsedIn", fields: [sourceFieldId], references: [id], onDelete: Restrict)
+
+  role FormulaRole
+
+  @@unique([computedFieldId, sourceFieldId, role])
+  @@index([computedFieldId])
+  @@map("sport_field_formula_components")
+}
+
+//note: track sportfield & sportfieldValue for each player
+model PlayerFieldValue {
   id String @id @default(uuid()) @db.Uuid
 
   profileId String @map("profile_id") @db.Uuid
@@ -181,18 +225,13 @@ model PlayerFieldValue {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([profileId, fieldId])
-
   @@index([profileId])
-
   @@index([fieldId])
-
   @@index([optionId])
-
   @@map("player_field_values")
 }
 
 model PlayerSportProfile {
-
   id String @id @default(uuid()) @db.Uuid
 
   userId String @map("user_id") @db.Uuid
@@ -212,12 +251,8 @@ model PlayerSportProfile {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, sportId])
-
   @@index([userId, sportId])
-
   @@index([userId])
-
   @@index([sportId])
-
   @@map("player_sport_profiles")
 }

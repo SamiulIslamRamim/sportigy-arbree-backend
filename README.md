@@ -19,6 +19,7 @@ This README documents the current state of the project: setup, architecture, res
 - [Sport Hierarchy & Setup (admin)](#sport-hierarchy--setup-admin)
 - [Match Self-Report + Admin Approval](#match-self-report--admin-approval)
 - [Career Statistics + Team Visibility](#career-statistics--team-visibility)
+- [Sport Metrics & Computed Fields (Phase 6)](#sport-metrics--computed-fields-phase-6)
 - [Flows](#flows)
 
 ---
@@ -255,6 +256,8 @@ Every error is identified by a numeric code. The message that reaches the client
 - **Sport hierarchy** — `Sport` → `SportCategory` / `SportField` / `SportFieldOption`.
   - `SportField`: `section` `PROFILE|MATCH`, `type` `SELECT|MULTI_SELECT|NUMBER|TEXT|BOOLEAN|DATE`.
   - `SportFieldOption`: for `SELECT`/`MULTI_SELECT` only.
+  - `SportMetric` — named buckets (`Batting`/`Bowling`, `Offensive`/`Goalkeeping`) that `SportField.metricId` points at; fields with no metric show under `Other`.
+  - **Computed fields** — `SportField` with `isComputed: true` (NUMBER + MATCH only). Value is derived, never player-entered: `SUM(numerator) ÷ SUM(denominator) × formulaMultiplier`. `SportFieldFormulaComponent` rows (`NUMERATOR`/`DENOMINATOR`) reference raw source fields only (no chaining).
 - **PlayerSportProfile** → **PlayerFieldValue** (option-only profile answers).
 - **PlayerMatch** → **PlayerMatchFieldValue** — the **merged match + participation** record.
   - A player's own full match: title, venue, teams, result, and per-field stat values.
@@ -274,8 +277,9 @@ Admin builds the sport tree before players can register or submit matches. **The
 ```
  1. POST /admin/sports/                          → create the sport
  2. POST /admin/sports/:sportId/categories/      → create formats (T20, ODI, 11-a-side)
- 3. POST /admin/sports/:sportId/fields/          → create fields (PROFILE / MATCH sections)
- 4. POST /admin/fields/:fieldId/options/         → options for SELECT/MULTI_SELECT fields
+ 3. POST /admin/sports/:sportId/metrics/         → optional: create metric buckets (Batting, Bowling…)
+ 4. POST /admin/sports/:sportId/fields/          → create fields (PROFILE / MATCH sections)
+ 5. POST /admin/fields/:fieldId/options/         → options for SELECT/MULTI_SELECT fields
 ```
 
 ### 1. Create a sport — `POST /admin/sports/`
@@ -317,7 +321,25 @@ A **MATCH** numeric field (drives career stat sums):
   "name": "Runs",
   "section": "MATCH",
   "type": "NUMBER",
-  "description": "Runs scored in the match"
+  "description": "Runs scored in the match",
+  "metricId": "6a1e...-uuid-of-Batting-metric"
+}
+```
+
+A **computed** MATCH field (never player-entered, derived via formula):
+
+```json
+{
+  "name": "Strike Rate",
+  "section": "MATCH",
+  "type": "NUMBER",
+  "isComputed": true,
+  "formulaMultiplier": 100,
+  "metricId": "6a1e...-uuid-of-Batting-metric",
+  "formulaComponents": [
+    { "sourceFieldId": "…runs-field-id…", "role": "NUMERATOR" },
+    { "sourceFieldId": "…balls-faced-field-id…", "role": "DENOMINATOR" }
+  ]
 }
 ```
 
@@ -325,6 +347,9 @@ Notes:
 - `section` is `PROFILE` or `MATCH`; `type` is `SELECT | MULTI_SELECT | NUMBER | TEXT | BOOLEAN | DATE`.
 - `options` (nested create) is only allowed for `SELECT`/`MULTI_SELECT` → otherwise `1401`.
 - Uniqueness is `(sportId, section, slug)` → duplicates → `1407`.
+- A computed field must be `section: MATCH`, `type: NUMBER`, and `required` is always forced `false`. It needs **at least one** `NUMERATOR` and one `DENOMINATOR` component.
+- Each component's `sourceFieldId` must belong to the **same sport**, be `section: MATCH`, `type: NUMBER`, and `isComputed: false` (no chaining). A field can't reference itself → `1401`. Duplicate `(sourceFieldId, role)` → `1407`.
+- `metricId` (computed or not) must belong to the sport → otherwise `1401`.
 
 ### 4. Create options — `POST /admin/fields/:fieldId/options/`
 
@@ -359,6 +384,10 @@ All under `/admin/sports/...`, guarded by `authenticateAdmin`.
 | POST | `/admin/fields/:fieldId/options/` | create option |
 | PATCH | `/admin/fields/:fieldId/options/:optionId/` | update option |
 | DELETE | `/admin/fields/:fieldId/options/:optionId/` | soft delete option |
+| GET | `/admin/sports/:sportId/metrics/` | list metrics |
+| POST | `/admin/sports/:sportId/metrics/` | create metric |
+| PATCH | `/admin/metrics/:metricId/` | update metric |
+| DELETE | `/admin/metrics/:metricId/` | soft delete metric (detaches its fields) |
 
 > DELETE is a **soft delete** (`isActive: false`); re-deleting an already-inactive record → `1701`.
 
@@ -462,7 +491,7 @@ Two **read-only** endpoints compute career stats **live** from `status == APPROV
 
 `GET /player/matches/stats/career/?sportId=<uuid>`
 
-Filters the player's matches to `sportId` + `APPROVED`, groups by `sportCategoryId` (`null` → `Uncategorized` bucket), and returns per group: `matchesPlayed`, a `resultBreakdown` (counts per `MatchResult`), and per **numeric** MATCH field a `{ fieldId, fieldName, total }` sum.
+Filters the player's matches to `sportId` + `APPROVED`, groups by `sportCategoryId` (`null` → `Uncategorized` bucket), and returns per group: `matchesPlayed`, a `resultBreakdown` (counts per `MatchResult`), and a `metrics` array (Phase 6). Each metric bucket carries its name (`metric`), `metricId` (`null` for the `Other` bucket) and a `fields` list. Raw `NUMBER` MATCH fields produce `{ fieldId, name, isComputed: false, total }`; computed fields produce `{ fieldId, name, isComputed: true, value }`.
 
 ### 2. Career by team — with hide/unhide
 
@@ -511,8 +540,57 @@ Presence of a `PlayerTeamVisibility` row means **hidden**; DELETE removes the ro
   1. group-level query → `matchesPlayed` + result pivot (`COUNT(*) FILTER`)
   2. `(group, field)` query → `SUM(value_number)` per numeric MATCH field
 - Numeric totals are `SUM` over `PlayerMatchFieldValue.valueNumber` (`Decimal(12,4)`) — exact, no float drift. No per-field aggregation-type config yet (straight sums).
+- **Computed fields (Phase 6)** — the grouped query is unchanged; it already returns `SUM(valueNumber)` per raw `NUMBER` field per group. A post-processing step then, **per group**, reads each computed field's numerator/denominator components' sums out of that same result set, **sums first, divides once at the end**, and applies `formulaMultiplier`: `value = Σ numerator ÷ Σ denominator × multiplier`, or `null` when the denominator is zero/missing (e.g. `0` balls faced → no strike rate). `isComputed` fields carry no `PlayerMatchFieldValue` rows (filtered from the player's form), so nothing to store.
+- Raw fields that are also formula inputs still appear on their own — being a component doesn't hide a field.
 - The by-team endpoint derives the team from `playerSide` inside a SQL CTE; raw `$queryRaw` is used where native PG enums need `::"EnumName"` casts.
 - Backed by composite index `[userId, sportId, status]`.
+
+---
+
+## Sport Metrics & Computed Fields (Phase 6)
+
+Both are admin-configurable per sport (sports themselves are admin-created).
+
+### Metrics
+
+A `SportMetric` is a named group a `SportField` belongs to (`Batting`/`Bowling` for cricket, `Offensive`/`Goalkeeping` for football), so career stats break down by metric instead of one flat field list. A field's `metricId` is nullable — fields without one fall under an `Other` bucket in the stats response. Assigning metrics is retroactive; no backfill required.
+
+- Create/list under `/admin/sports/:sportId/metrics/`; update/delete under `/admin/metrics/:metricId/` (all `authenticateAdmin`).
+- `slug` auto-generated from `name`; unique per sport → `1407`.
+- DELETE is a **soft delete** (`isActive: false`); it also detaches any fields currently assigned to the metric (`metricId → null`, since the FK is `SetNull`).
+
+### Computed fields
+
+A `SportField` with `isComputed: true` whose value is **never entered by the player** — it is derived as `SUM(numerator fields) ÷ SUM(denominator fields) × formulaMultiplier`. Computed fields reference **raw inputs only** (a source field can't itself be computed), so evaluation is single-pass with no dependency ordering.
+
+- `type` forced `NUMBER`, `section` forced `MATCH`, `required` forced `false`.
+- Needs ≥1 `NUMERATOR` and ≥1 `DENOMINATOR` component; no self-reference; every source field in the same sport (`MATCH` + `NUMBER` + not computed).
+- Computed fields are excluded from the player's match-entry form — `validateMatchValues` filters `isComputed = false`, so no `PlayerMatchFieldValue` row is ever written for them.
+- Career aggregation: the Phase 5 grouped query is unchanged; computed values are derived in post-processing from the already-summed raw totals, **sum-then-divide-once**, per group. A "strike rate" is `Σ runs ÷ Σ balls × 100`, never the average of per-match strike rates.
+
+```json
+// GET /player/matches/stats/career/ — per category (abridged)
+{
+  "categoryId": "…",
+  "categoryName": "T20",
+  "matchesPlayed": 12,
+  "resultBreakdown": { "WIN": 7, "LOSS": 4, "TIE": 1, "DRAW": 0, "NO_RESULT": 0 },
+  "metrics": [
+    {
+      "metric": "Batting",
+      "metricId": "…",
+      "fields": [
+        { "fieldId": "…", "name": "Runs", "isComputed": false, "total": 450 },
+        { "fieldId": "…", "name": "Balls Faced", "isComputed": false, "total": 320 },
+        { "fieldId": "…", "name": "Strike Rate", "isComputed": true, "value": 140.63 }
+      ]
+    },
+    { "metric": "Bowling", "metricId": "…", "fields": [ ] }
+  ]
+}
+```
+
+> Known limitation: `formulaMultiplier` is per computed field only — a per-component weight (e.g. "total bases = singles + 2×doubles") would need a follow-up. Nothing currently requires it.
 
 ---
 
@@ -522,7 +600,8 @@ Presence of a `PlayerTeamVisibility` row means **hidden**; DELETE removes the ro
 
 ```
 Admin: POST /admin/sports/ ─► POST /admin/sports/:id/categories/ ─►
-       POST /admin/sports/:id/fields/ ─► POST /admin/fields/:id/options/
+       POST /admin/sports/:id/metrics/ ─► POST /admin/sports/:id/fields/ ─►
+       POST /admin/fields/:id/options/
 
 Player: POST /player/matches/ (PENDING)
    └─► Admin: GET /admin/matches/ + approve/reject
@@ -530,9 +609,10 @@ Player: POST /player/matches/ (PENDING)
                GET /player/matches/stats/career/
                GET /player/matches/stats/by-team/?hidden=include
    Player: POST/DELETE /player/matches/team-visibility/ ─► toggles isHidden per team
+   Computed fields (e.g. SR) are derived server-side from raw sums.
 ```
 
 ### Role ownership
 
-- **Admin** owns: sport hierarchy (Sport/Category/Field/Option), match review + stat approval.
+- **Admin** owns: sport hierarchy (Sport/Category/Metric/Field/Option), match review + stat approval.
 - **Player** owns: profiles, match entries (self-reported, pending admin approval), team visibility preferences.

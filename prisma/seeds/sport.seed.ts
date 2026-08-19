@@ -1,5 +1,5 @@
 import { prisma } from "../../src/config/prisma";
-import { FieldSection, FieldType } from "../../src/generated/prisma/client";
+import { FieldSection, FieldType, FormulaRole } from "../../src/generated/prisma/client";
 
 type FieldSeed = {
   name: string;
@@ -11,6 +11,11 @@ type FieldSeed = {
   filterable: boolean;
   sortable: boolean;
   displayOrder: number;
+  metricSlug?: string;
+  isComputed?: boolean;
+  formulaMultiplier?: number;
+  numeratorSlugs?: string[];
+  denominatorSlugs?: string[];
   options?: {
     label: string;
     value: string;
@@ -136,6 +141,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 1,
+    metricSlug: "batting",
   },
   {
     name: "Runs",
@@ -147,6 +153,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 2,
+    metricSlug: "batting",
   },
   {
     name: "HS",
@@ -158,6 +165,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 3,
+    metricSlug: "batting",
   },
   {
     name: "Ave",
@@ -169,6 +177,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 4,
+    metricSlug: "batting",
   },
   {
     name: "BF",
@@ -180,6 +189,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 5,
+    metricSlug: "batting",
   },
   {
     name: "SR",
@@ -191,6 +201,11 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 6,
+    isComputed: true,
+    formulaMultiplier: 100,
+    numeratorSlugs: ["total_runs"],
+    denominatorSlugs: ["balls_faced"],
+    metricSlug: "batting",
   },
   {
     name: "100s",
@@ -202,6 +217,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 7,
+    metricSlug: "batting",
   },
   {
     name: "50s",
@@ -213,6 +229,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 8,
+    metricSlug: "batting",
   },
   {
     name: "4s",
@@ -224,6 +241,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 9,
+    metricSlug: "batting",
   },
   {
     name: "6s",
@@ -235,6 +253,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 10,
+    metricSlug: "batting",
   },
   {
     name: "Ct",
@@ -246,6 +265,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 11,
+    metricSlug: "fielding",
   },
   {
     name: "St",
@@ -257,6 +277,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 12,
+    metricSlug: "fielding",
   },
   {
     name: "O",
@@ -268,6 +289,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 13,
+    metricSlug: "bowling",
   },
   {
     name: "W",
@@ -279,6 +301,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 14,
+    metricSlug: "bowling",
   },
   {
     name: "Runs (Bowling)",
@@ -290,6 +313,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 15,
+    metricSlug: "bowling",
   },
   {
     name: "Econ",
@@ -301,6 +325,11 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 16,
+    isComputed: true,
+    formulaMultiplier: 6,
+    numeratorSlugs: ["runs_conceded"],
+    denominatorSlugs: ["overs_bowled"],
+    metricSlug: "bowling",
   },
   {
     name: "5w",
@@ -312,6 +341,7 @@ const cricketMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 17,
+    metricSlug: "bowling",
   },
 ];
 
@@ -337,6 +367,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 2,
+    metricSlug: "offensive",
   },
   {
     name: "A",
@@ -348,6 +379,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 3,
+    metricSlug: "offensive",
   },
   {
     name: "Mins",
@@ -370,6 +402,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 5,
+    metricSlug: "offensive",
   },
   {
     name: "SoT",
@@ -381,6 +414,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 6,
+    metricSlug: "offensive",
   },
   {
     name: "Pass %",
@@ -414,6 +448,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 9,
+    metricSlug: "goalkeeping",
   },
   {
     name: "GC",
@@ -425,6 +460,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 10,
+    metricSlug: "goalkeeping",
   },
   {
     name: "Saves",
@@ -436,6 +472,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 11,
+    metricSlug: "goalkeeping",
   },
   {
     name: "Save %",
@@ -447,6 +484,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 12,
+    metricSlug: "goalkeeping",
   },
   {
     name: "Pen S",
@@ -458,6 +496,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 13,
+    metricSlug: "goalkeeping",
   },
   {
     name: "YC",
@@ -484,7 +523,13 @@ const footballMatchFields: FieldSeed[] = [
 ];
 
 async function seedFields(sportId: string, fields: FieldSeed[]) {
+  const fieldBySlug = new Map<string, string>();
+  const metricBySport = sportMetricBySlug.get(sportId) ?? new Map<string, string>();
+
   for (const field of fields) {
+    const metricId = field.metricSlug ? metricBySport.get(field.metricSlug) ?? null : null;
+    const isComputed = field.isComputed ?? false;
+
     const createdField = await prisma.sportField.upsert({
       where: {
         sportId_section_slug: {
@@ -496,11 +541,14 @@ async function seedFields(sportId: string, fields: FieldSeed[]) {
       update: {
         name: field.name,
         type: field.type,
-        required: field.required,
+        required: isComputed ? false : field.required,
         searchable: field.searchable,
         filterable: field.filterable,
         sortable: field.sortable,
         displayOrder: field.displayOrder,
+        isComputed,
+        formulaMultiplier: field.formulaMultiplier ?? null,
+        metricId,
         isActive: true,
       },
       create: {
@@ -509,13 +557,18 @@ async function seedFields(sportId: string, fields: FieldSeed[]) {
         slug: field.slug,
         section: field.section,
         type: field.type,
-        required: field.required,
+        required: isComputed ? false : field.required,
         searchable: field.searchable,
         filterable: field.filterable,
         sortable: field.sortable,
         displayOrder: field.displayOrder,
+        isComputed,
+        formulaMultiplier: field.formulaMultiplier ?? null,
+        metricId,
       },
     });
+
+    fieldBySlug.set(field.slug, createdField.id);
 
     if (field.options) {
       for (const option of field.options) {
@@ -539,7 +592,55 @@ async function seedFields(sportId: string, fields: FieldSeed[]) {
       }
     }
   }
+
+  // Computed fields need their formula components wired after every source
+  // field exists (source fields are plain MATCH NUMBER fields in the same sport).
+  for (const field of fields) {
+    if (!field.isComputed) continue;
+    const computedFieldId = fieldBySlug.get(field.slug);
+    if (!computedFieldId) continue;
+
+    const components: { computedFieldId: string; sourceFieldId: string; role: FormulaRole }[] = [];
+    for (const sourceSlug of field.numeratorSlugs ?? []) {
+      const sourceFieldId = fieldBySlug.get(sourceSlug);
+      if (sourceFieldId) components.push({ computedFieldId, sourceFieldId, role: FormulaRole.NUMERATOR });
+    }
+    for (const sourceSlug of field.denominatorSlugs ?? []) {
+      const sourceFieldId = fieldBySlug.get(sourceSlug);
+      if (sourceFieldId) components.push({ computedFieldId, sourceFieldId, role: FormulaRole.DENOMINATOR });
+    }
+
+    for (const c of components) {
+      await prisma.sportFieldFormulaComponent.upsert({
+        where: {
+          computedFieldId_sourceFieldId_role: {
+            computedFieldId: c.computedFieldId,
+            sourceFieldId: c.sourceFieldId,
+            role: c.role,
+          },
+        },
+        update: {},
+        create: c,
+      });
+    }
+  }
 }
+
+async function seedMetrics(sportId: string, metrics: { name: string; slug: string; displayOrder: number }[]) {
+  for (const m of metrics) {
+    const metric = await prisma.sportMetric.upsert({
+      where: { sportId_slug: { sportId, slug: m.slug } },
+      update: { name: m.name, displayOrder: m.displayOrder, isActive: true },
+      create: { sportId, name: m.name, slug: m.slug, displayOrder: m.displayOrder },
+    });
+    // Keep a slug -> id lookup for the seeding pass that assigns metricId to fields.
+    (sportMetricBySlug.get(sportId) ?? sportMetricBySlug.set(sportId, new Map()).get(sportId)!).set(m.slug, metric.id);
+  }
+}
+
+// sportId -> (metricSlug -> metricId), populated during seedMetrics so seedFields
+// can resolve metricSlug to a real metric id.
+const sportMetricBySlug = new Map<string, Map<string, string>>();
 
 async function seedCategories(
   sportId: string,
@@ -615,6 +716,17 @@ export async function seedSports() {
     "T20",
     "ODI",
     "TEST"
+  ]);
+
+  await seedMetrics(football.id, [
+    { name: "Offensive", slug: "offensive", displayOrder: 1 },
+    { name: "Goalkeeping", slug: "goalkeeping", displayOrder: 2 },
+  ]);
+
+  await seedMetrics(cricket.id, [
+    { name: "Batting", slug: "batting", displayOrder: 1 },
+    { name: "Bowling", slug: "bowling", displayOrder: 2 },
+    { name: "Fielding", slug: "fielding", displayOrder: 3 },
   ]);
 
   await seedFields(football.id, [

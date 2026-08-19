@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { ApprovalStatus, MatchResult, Prisma, UserRole } from "../../generated/prisma/client";
+import { ApprovalStatus, FieldSection, FieldType, FormulaRole, MatchResult, Prisma, UserRole } from "../../generated/prisma/client";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { ERROR_CODES } from "../../constants/errorCodes";
@@ -8,10 +8,21 @@ import { AuthenticatedRequest } from "../../types/auth.type";
 import { parseBody, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper";
 import { byTeamStatsQuerySchema, hiddenQuerySchema, sportQuerySchema, teamVisibilitySchema } from "../../schemas/career.schema";
 import { ResponseHandler } from "../../utils/Responsehandler";
-import { CategoryStatRow, CountValue, FieldStat, NumericValue, ResultBreakdown, TeamRow, TeamStatRow } from "../../types/career.type";
+import {
+  CareerFieldConfig,
+  CareerFieldOutput,
+  CareerMetricConfig,
+  CareerMetricOutput,
+  CategoryStatRow,
+  CountValue,
+  NumericValue,
+  ResultBreakdown,
+  TeamRow,
+  TeamStatRow,
+} from "../../types/career.type";
 
 const UNCATEGORIZED_KEY = "__uncategorized__";
-
+const OTHER_METRIC_KEY = "__other__";
 
 const emptyBreakdown = (): ResultBreakdown => ({
   [MatchResult.WIN]: 0,
@@ -38,6 +49,155 @@ const assertActiveSport = async (sportId: string): Promise<void> => {
   });
   if (!sport || !sport.isActive) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
 };
+
+/**
+ * Loads the sport's stat-bearing MATCH NUMBER fields (raw inputs + computed)
+ * together with its ordered metrics. Loaded once per request so computed-field
+ * post-processing needs no extra database round trips.
+ */
+const fetchSportFieldConfig = async (
+  sportId: string,
+): Promise<{ fields: CareerFieldConfig[]; metrics: CareerMetricConfig[] }> => {
+  const [raw, metrics] = await Promise.all([
+    prisma.sportField.findMany({
+      where: { sportId, section: FieldSection.MATCH, type: FieldType.NUMBER },
+      select: {
+        id: true,
+        name: true,
+        displayOrder: true,
+        isComputed: true,
+        metricId: true,
+        formulaMultiplier: true,
+        formulaComponents: { select: { sourceFieldId: true, role: true } },
+      },
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    }),
+    prisma.sportMetric.findMany({
+      where: { sportId },
+      select: { id: true, name: true, displayOrder: true },
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    }),
+  ]);
+
+  const fields: CareerFieldConfig[] = raw.map((f) => ({
+    id: f.id,
+    name: f.name,
+    displayOrder: f.displayOrder,
+    isComputed: f.isComputed,
+    metricId: f.metricId,
+    formulaMultiplier:
+      f.formulaMultiplier !== null ? toNumber(f.formulaMultiplier) : null,
+    numeratorIds: f.formulaComponents
+      .filter((c) => c.role === FormulaRole.NUMERATOR)
+      .map((c) => c.sourceFieldId),
+    denominatorIds: f.formulaComponents
+      .filter((c) => c.role === FormulaRole.DENOMINATOR)
+      .map((c) => c.sourceFieldId),
+  }));
+
+  const metricConfigs: CareerMetricConfig[] = metrics.map((m) => ({
+    id: m.id,
+    name: m.name,
+    displayOrder: m.displayOrder,
+  }));
+
+  return { fields, metrics: metricConfigs };
+};
+
+const sumSourceIds = (ids: string[], statSum: Map<string, number>): number => {
+  let total = 0;
+  let anyFound = false;
+  for (const id of ids) {
+    const v = statSum.get(id);
+    if (v !== undefined) {
+      total += v;
+      anyFound = true;
+    }
+  }
+  return anyFound ? total : 0;
+};
+
+/**
+ * Sum-first, divide-once evaluation. Given a per-group SUM(value_number) map
+ * (the exact output Phase 5 already produces), buckets every stat-bearing
+ * field by metric and computes computed fields from those raw sums — no
+ * additional aggregate query needed.
+ */
+const buildMetrics = (
+  statSum: Map<string, number>,
+  fields: CareerFieldConfig[],
+  metrics: CareerMetricConfig[],
+): CareerMetricOutput[] => {
+  const hasOther = fields.some((f) => f.metricId === null);
+  const buckets: Array<{ key: string | null; label: string }> = [
+    ...metrics.map((m) => ({ key: m.id as string | null, label: m.name })),
+    ...(hasOther ? [{ key: null as string | null, label: "Other" }] : []),
+  ];
+
+  const metricKeyOf = (f: CareerFieldConfig): string | null =>
+    f.metricId ?? OTHER_METRIC_KEY;
+
+  // Track which metric buckets actually exist among the fields.
+  const presentMetricIds = new Set(fields.map(metricKeyOf));
+
+  const outputs: CareerMetricOutput[] = [];
+
+  for (const bucket of buckets) {
+    const bucketKey = bucket.key ?? OTHER_METRIC_KEY;
+    if (!presentMetricIds.has(bucketKey)) continue;
+
+    const bucketFields = fields
+      .filter((f) => (f.metricId ?? OTHER_METRIC_KEY) === bucketKey)
+      .sort(
+        (a, b) =>
+          a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
+      );
+
+    const fieldOutputs: CareerFieldOutput[] = [];
+
+    for (const f of bucketFields) {
+      if (!f.isComputed) {
+        const total = statSum.get(f.id);
+        // A raw field with no data in this group is omitted; computed fields
+        // are always emitted (with null when the denominator is zero/missing).
+        if (total === undefined) continue;
+        fieldOutputs.push({
+          fieldId: f.id,
+          name: f.name,
+          metricId: f.metricId,
+          isComputed: false,
+          total,
+        });
+        continue;
+      }
+
+      const numerator = sumSourceIds(f.numeratorIds, statSum);
+      const denominator = sumSourceIds(f.denominatorIds, statSum);
+      const value =
+        denominator === 0 || Number.isNaN(denominator)
+          ? null
+          : round2((numerator / denominator) * (f.formulaMultiplier ?? 1));
+      fieldOutputs.push({
+        fieldId: f.id,
+        name: f.name,
+        metricId: f.metricId,
+        isComputed: true,
+        value,
+      });
+    }
+
+    outputs.push({
+      metric: bucket.label,
+      metricId: bucket.key,
+      fields: fieldOutputs,
+    });
+  }
+
+  return outputs;
+};
+
+const round2 = (value: number): number =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
 
 // Keep the team_key CASE in sync with helper.ts teamKeyFor()/normalizeTeamName().
 const buildSideCte = (userId: string, sportId: string): Prisma.Sql =>
@@ -75,7 +235,7 @@ export const getCareerStats = asyncHandler(
     const { sportId } = parseBody(sportQuerySchema, req.query);
     await assertActiveSport(sportId);
 
-    const [grouped, statRows] = await Promise.all([
+    const [grouped, statRows, fieldConfig] = await Promise.all([
       prisma.playerMatch.groupBy({
         by: ["sportCategoryId", "result"],
         where: { userId, sportId, status: ApprovalStatus.APPROVED },
@@ -94,19 +254,31 @@ export const getCareerStats = asyncHandler(
           AND pm.sport_id = ${sportId}::uuid
           AND pm.status = 'APPROVED'::"ApprovalStatus"
           AND f.type = 'NUMBER'::"FieldType"
+          AND f.is_computed = true
         GROUP BY pm.sport_category_id, fv.field_id, f.name
       `,
+      fetchSportFieldConfig(sportId),
     ]);
 
     const categoryMap = new Map<
       string,
-      { categoryId: string | null; matchesPlayed: number; resultBreakdown: ResultBreakdown; stats: FieldStat[] }
+      {
+        categoryId: string | null;
+        matchesPlayed: number;
+        resultBreakdown: ResultBreakdown;
+        statSum: Map<string, number>;
+      }
     >();
     for (const row of grouped) {
       const key = row.sportCategoryId ?? UNCATEGORIZED_KEY;
       let entry = categoryMap.get(key);
       if (!entry) {
-        entry = { categoryId: row.sportCategoryId, matchesPlayed: 0, resultBreakdown: emptyBreakdown(), stats: [] };
+        entry = {
+          categoryId: row.sportCategoryId,
+          matchesPlayed: 0,
+          resultBreakdown: emptyBreakdown(),
+          statSum: new Map(),
+        };
         categoryMap.set(key, entry);
       }
       entry.matchesPlayed += row._count._all;
@@ -114,9 +286,7 @@ export const getCareerStats = asyncHandler(
     }
     for (const row of statRows) {
       const entry = categoryMap.get(row.categoryId ?? UNCATEGORIZED_KEY);
-      if (entry) {
-        entry.stats.push({ fieldId: row.fieldId, fieldName: row.fieldName, total: toNumber(row.total) });
-      }
+      if (entry) entry.statSum.set(row.fieldId, toNumber(row.total));
     }
 
     const categoryIds = [...categoryMap.values()]
@@ -133,7 +303,7 @@ export const getCareerStats = asyncHandler(
         categoryName: entry.categoryId ? (categoryNameMap.get(entry.categoryId) ?? null) : "Uncategorized",
         matchesPlayed: entry.matchesPlayed,
         resultBreakdown: entry.resultBreakdown,
-        stats: entry.stats,
+        metrics: buildMetrics(entry.statSum, fieldConfig.fields, fieldConfig.metrics),
       }))
       .sort((a, b) => b.matchesPlayed - a.matchesPlayed);
 
@@ -150,7 +320,7 @@ export const getCareerByTeam = asyncHandler(
 
     const sideCte = buildSideCte(userId, sportId);
 
-    const [hiddenRows, teamRows, statRows] = await Promise.all([
+    const [hiddenRows, teamRows, statRows, fieldConfig] = await Promise.all([
       prisma.playerTeamVisibility.findMany({
         where: { userId, sportId },
         select: { teamKey: true },
@@ -181,16 +351,24 @@ export const getCareerByTeam = asyncHandler(
         FROM side s
         JOIN player_match_field_values fv ON fv.player_match_id = s.match_id
         JOIN sport_fields f ON f.id = fv.field_id
-        WHERE s.team_key IS NOT NULL AND f.type = 'NUMBER'::"FieldType"
+        WHERE s.team_key IS NOT NULL AND f.type = 'NUMBER'::"FieldType" AND f.is_computed = false
         GROUP BY s.team_key, fv.field_id, f.name
       `,
+      fetchSportFieldConfig(sportId),
     ]);
 
     const hiddenKeys = new Set(hiddenRows.map((r) => r.teamKey));
 
     const teamMap = new Map<
       string,
-      { teamKey: string; teamOrgId: string | null; teamName: string | null; matchesPlayed: number; resultBreakdown: ResultBreakdown; stats: FieldStat[] }
+      {
+        teamKey: string;
+        teamOrgId: string | null;
+        teamName: string | null;
+        matchesPlayed: number;
+        resultBreakdown: ResultBreakdown;
+        statSum: Map<string, number>;
+      }
     >();
     for (const row of teamRows) {
       teamMap.set(row.teamKey, {
@@ -205,12 +383,12 @@ export const getCareerByTeam = asyncHandler(
           [MatchResult.TIE]: toNumber(row.tieCount),
           [MatchResult.NO_RESULT]: toNumber(row.noResultCount),
         },
-        stats: [],
+        statSum: new Map(),
       });
     }
     for (const row of statRows) {
       const entry = teamMap.get(row.teamKey);
-      if (entry) entry.stats.push({ fieldId: row.fieldId, fieldName: row.fieldName, total: toNumber(row.total) });
+      if (entry) entry.statSum.set(row.fieldId, toNumber(row.total));
     }
 
     const orgIds = [...teamMap.values()]
@@ -229,7 +407,7 @@ export const getCareerByTeam = asyncHandler(
         isHidden: hiddenKeys.has(t.teamKey),
         matchesPlayed: t.matchesPlayed,
         resultBreakdown: t.resultBreakdown,
-        stats: t.stats,
+        metrics: buildMetrics(t.statSum, fieldConfig.fields, fieldConfig.metrics),
       }))
       .sort((a, b) => b.matchesPlayed - a.matchesPlayed);
 

@@ -30,10 +30,35 @@ export interface TeamStatRow {
   total: NumericValue;
 }
 
-export interface FieldStat {
-  fieldId: string;
-  fieldName: string;
-  total: number;
+export type ResultBreakdown = Record<MatchResult, number>;
+
+/**
+ * A sport field's stat-bearing config (raw NUMBER MATCH fields plus computed).
+ * Loaded once per stats request and shared by career/by-team post-processing.
+ */
+export interface CareerFieldConfig {
+  id: string;
+  name: string;
+  displayOrder: number;
+  isComputed: boolean;
+  metricId: string | null;
+  formulaMultiplier: number | null;
+  numeratorIds: string[];
+  denominatorIds: string[];
 }
 
-export type ResultBreakdown = Record<MatchResult, number>;
+export interface CareerMetricConfig {
+  id: string;
+  name: string;
+  displayOrder: number;
+}
+
+export type CareerFieldOutput =
+  | { fieldId: string; name: string; metricId: string | null; isComputed: false; total: number }
+  | { fieldId: string; name: string; metricId: string | null; isComputed: true; value: number | null };
+
+export interface CareerMetricOutput {
+  metric: string;
+  metricId: string | null;
+  fields: CareerFieldOutput[];
+}

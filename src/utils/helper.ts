@@ -79,7 +79,7 @@ const validateMatchValues = async (
   }
 
   const fields = await tx.sportField.findMany({
-    where: { sportId, section: FieldSection.MATCH, isActive: true },
+    where: { sportId, section: FieldSection.MATCH, isActive: true, isComputed: false },
     select: {
       id: true,
       type: true,
@@ -209,7 +209,7 @@ const derivePlayerMatch = <T extends {
   playerTeamOrg: match.playerSide === PlayerSide.HOME ? match.homeTeamOrg : match.playerSide === PlayerSide.AWAY ? match.awayTeamOrg : null,
 });
 
-const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus) => {
+const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus, includeValues = false) => {
   const rows = await prisma.playerMatch.findMany({
     where: { userId, ...(status !== undefined && { status }) },
     orderBy: { createdAt: "desc" },
@@ -217,6 +217,14 @@ const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus) => {
       sport: { select: { id: true, name: true, slug: true } },
       sportCategory: { select: { id: true, name: true, slug: true } },
       ...teamOrgInclude,
+      ...(includeValues && {
+        values: {
+          include: {
+            field: { select: { id: true, name: true, slug: true, type: true } },
+            option: { select: { id: true, label: true, value: true } },
+          },
+        },
+      }),
     },
   });
   return rows.map(derivePlayerMatch);

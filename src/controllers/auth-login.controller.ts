@@ -44,7 +44,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
 
   ResponseHandler.success(res, "Login successful.", {
-    access: accessToken,
+    accessToken: accessToken,
     user,
   });
 });

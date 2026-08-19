@@ -9,7 +9,7 @@ model User {
   bio          String?
   height       String?
   weight       String?
-  gender       Gender?   @default(other)   
+  gender       Gender?   @default(other)
   birthday     DateTime? @db.Date
   categories   String[]
   websiteUrl   String?   @map("website_url")
@@ -22,11 +22,11 @@ model User {
 
   // Dynamic Multi-Sport Profiles
   // sports OrganizationSport[]
-  sportProfiles PlayerSportProfile[]
-  playerMatches PlayerMatch[]
-  playerMatchesAsHomeTeamOrg PlayerMatch[] @relation("PlayerMatchHomeTeamOrg")
-  playerMatchesAsAwayTeamOrg PlayerMatch[] @relation("PlayerMatchAwayTeamOrg")
-  teamVisibility PlayerTeamVisibility[]
+  sportProfiles              PlayerSportProfile[]
+  playerMatches              PlayerMatch[]
+  playerMatchesAsHomeTeamOrg PlayerMatch[]          @relation("PlayerMatchHomeTeamOrg")
+  playerMatchesAsAwayTeamOrg PlayerMatch[]          @relation("PlayerMatchAwayTeamOrg")
+  teamVisibility             PlayerTeamVisibility[]
 
   @@index([isActive])
   @@index([email])
@@ -47,7 +47,6 @@ model PasswordReset {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([email])
-
   @@map("password_resets")
 }
 
@@ -67,11 +66,8 @@ model PendingRegistration {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([email])
-
   @@map("pending_registrations")
 }
-
-
 
 model Admin {
   id           String   @id @default(uuid()) @db.Uuid
@@ -83,8 +79,6 @@ model Admin {
 
   @@map("admins")
 }
-
-
 
 model OrgCategory {
   id   String @id @default(uuid()) @db.Uuid

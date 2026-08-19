@@ -33,6 +33,12 @@ import {
   updateFieldOption,
 } from "../controllers/admin/admin-sportFieldOption.controller.js";
 import { approveMatch, getMatchSubmission, listMatchSubmissions, rejectMatch } from "../controllers/admin/admin-match.controller.js";
+import {
+  createSportMetric,
+  deleteSportMetric,
+  getSportMetrics,
+  updateSportMetric,
+} from "../controllers/admin/admin-sportMetric.controller.js";
 
 const router = Router();
 
@@ -65,6 +71,12 @@ router.get("/admin/fields/:fieldId/options/", authenticateAdmin, getFieldOptions
 router.post("/admin/fields/:fieldId/options/", authenticateAdmin, createFieldOption,);
 router.patch("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, updateFieldOption,);
 router.delete("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, deleteFieldOption,);
+
+// ─── Admin Sport Metrics (Phase 6) ────────────────────────────────────────────
+router.get("/admin/sports/:sportId/metrics/", authenticateAdmin, getSportMetrics);
+router.post("/admin/sports/:sportId/metrics/", authenticateAdmin, createSportMetric);
+router.patch("/admin/metrics/:metricId/", authenticateAdmin, updateSportMetric);
+router.delete("/admin/metrics/:metricId/", authenticateAdmin, deleteSportMetric);
 
 
 // ─── Admin Match Review ────────────────────────────────────────────────────────

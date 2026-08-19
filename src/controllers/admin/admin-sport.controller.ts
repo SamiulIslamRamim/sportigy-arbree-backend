@@ -38,9 +38,16 @@ export const getSportById = asyncHandler(
       where: { id: sportId },
       include: {
         categories: { orderBy: { name: "asc" } },
+        metrics: { orderBy: [{ displayOrder: "asc" }, { name: "asc" }] },
         fields: {
           orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-          include: { options: { orderBy: { createdAt: "asc" } } },
+          include: {
+            options: { orderBy: { createdAt: "asc" } },
+            metric: { select: { id: true, name: true, slug: true } },
+            formulaComponents: {
+              include: { sourceField: { select: { id: true, name: true, slug: true } } },
+            },
+          },
         },
       },
     });
