@@ -7,16 +7,16 @@ import {
   verifyOtpAndReset,
 } from "../controllers/auth-password-reset.controller.js";
 
-const router = Router();
+const authRoutes = Router();
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
-router.post("/token/", login);
-router.post("/token/refresh/", refresh);
-router.get("/token/verify", verifySession);
-router.post("/logout", logout);
+authRoutes.post("/token/", login);
+authRoutes.post("/token/refresh/", refresh);
+authRoutes.get("/token/verify", verifySession);
+authRoutes.post("/logout", logout);
 
 // ─── Password Recovery ─────────────────────────────────────────────────────────
-router.post("/forgot-password/", sendOtp);
-router.post("/reset-password/", verifyOtpAndReset);
+authRoutes.post("/forgot-password/", sendOtp);
+authRoutes.post("/reset-password/", verifyOtpAndReset);
 
-export default router;
+export default authRoutes;

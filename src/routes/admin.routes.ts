@@ -11,7 +11,8 @@ import {
   deleteSport,
   getSportById,
   getSports,
-  updateSport,} from "../controllers/admin/admin-sport.controller.js";
+  updateSport,
+} from "../controllers/admin/admin-sport.controller.js";
 import {
   createSportCategory,
   deleteSportCategory,
@@ -32,7 +33,12 @@ import {
   getFieldOptions,
   updateFieldOption,
 } from "../controllers/admin/admin-sportFieldOption.controller.js";
-import { approveMatch, getMatchSubmission, listMatchSubmissions, rejectMatch } from "../controllers/admin/admin-match.controller.js";
+import {
+  approveMatch,
+  getMatchSubmission,
+  listMatchSubmissions,
+  rejectMatch,
+} from "../controllers/admin/admin-match.controller.js";
 import {
   createSportMetric,
   deleteSportMetric,
@@ -40,50 +46,132 @@ import {
   updateSportMetric,
 } from "../controllers/admin/admin-sportMetric.controller.js";
 
-const router = Router();
+const adminRoutes = Router();
 
 // ─── Admin Auth ────────────────────────────────────────────────────────────────
-router.post("/admin/token/", adminLogin);
-router.post("/admin/token/refresh/", adminRefresh);
-router.get("/admin/token/verify/", adminVerifySession);
-router.post("/admin/logout/", adminLogout);
+adminRoutes.post("/token/", adminLogin);
+adminRoutes.post("/token/refresh/", adminRefresh);
+adminRoutes.get("/token/verify/", adminVerifySession);
+adminRoutes.post("/logout/", adminLogout);
 
 // ─── Admin Sport Hierarchy ─────────────────────────────────────────────────────
-router.get("/admin/sports/", authenticateAdmin, getSports);
-router.post("/admin/sports/", authenticateAdmin, createSport);
-router.get("/admin/sports/:sportId/", authenticateAdmin, getSportById);
-router.patch("/admin/sports/:sportId/", authenticateAdmin, updateSport);
-router.delete("/admin/sports/:sportId/", authenticateAdmin, deleteSport);
+adminRoutes.get("/sports/", authenticateAdmin, getSports);
+adminRoutes.post("/sports/", authenticateAdmin, createSport);
+adminRoutes.get("/sports/:sportId/", authenticateAdmin, getSportById);
+adminRoutes.patch("/sports/:sportId/", authenticateAdmin, updateSport);
+adminRoutes.delete("/sports/:sportId/", authenticateAdmin, deleteSport);
 
-router.get("/admin/sports/:sportId/categories/", authenticateAdmin, getSportCategories,);
-router.post("/admin/sports/:sportId/categories/", authenticateAdmin, createSportCategory,);
-router.get("/admin/sports/:sportId/categories/:categoryId/", authenticateAdmin, getSportCategoryById,);
-router.patch("/admin/sports/:sportId/categories/:categoryId/", authenticateAdmin, updateSportCategory,);
-router.delete("/admin/sports/:sportId/categories/:categoryId/", authenticateAdmin, deleteSportCategory,);
+adminRoutes.get(
+  "/sports/:sportId/categories/",
+  authenticateAdmin,
+  getSportCategories,
+);
+adminRoutes.post(
+  "/sports/:sportId/categories/",
+  authenticateAdmin,
+  createSportCategory,
+);
+adminRoutes.get(
+  "/sports/:sportId/categories/:categoryId/",
+  authenticateAdmin,
+  getSportCategoryById,
+);
+adminRoutes.patch(
+  "/sports/:sportId/categories/:categoryId/",
+  authenticateAdmin,
+  updateSportCategory,
+);
+adminRoutes.delete(
+  "/sports/:sportId/categories/:categoryId/",
+  authenticateAdmin,
+  deleteSportCategory,
+);
 
-router.get("/admin/sports/:sportId/fields/", authenticateAdmin, getSportFields);
-router.post("/admin/sports/:sportId/fields/", authenticateAdmin, createSportField,);
-router.get("/admin/sports/:sportId/fields/:fieldId/", authenticateAdmin, getSportFieldById,);
-router.patch("/admin/sports/:sportId/fields/:fieldId/",authenticateAdmin, updateSportField,);
-router.delete("/admin/sports/:sportId/fields/:fieldId/", authenticateAdmin, deleteSportField,);
+adminRoutes.get(
+  "/sports/:sportId/fields/",
+  authenticateAdmin,
+  getSportFields,
+);
+adminRoutes.post(
+  "/sports/:sportId/fields/",
+  authenticateAdmin,
+  createSportField,
+);
+adminRoutes.get(
+  "/sports/:sportId/fields/:fieldId/",
+  authenticateAdmin,
+  getSportFieldById,
+);
+adminRoutes.patch(
+  "/sports/:sportId/fields/:fieldId/",
+  authenticateAdmin,
+  updateSportField,
+);
+adminRoutes.delete(
+  "/sports/:sportId/fields/:fieldId/",
+  authenticateAdmin,
+  deleteSportField,
+);
 
-router.get("/admin/fields/:fieldId/options/", authenticateAdmin, getFieldOptions,);
-router.post("/admin/fields/:fieldId/options/", authenticateAdmin, createFieldOption,);
-router.patch("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, updateFieldOption,);
-router.delete("/admin/fields/:fieldId/options/:optionId/", authenticateAdmin, deleteFieldOption,);
+adminRoutes.get(
+  "/fields/:fieldId/options/",
+  authenticateAdmin,
+  getFieldOptions,
+);
+adminRoutes.post(
+  "/fields/:fieldId/options/",
+  authenticateAdmin,
+  createFieldOption,
+);
+adminRoutes.patch(
+  "/fields/:fieldId/options/:optionId/",
+  authenticateAdmin,
+  updateFieldOption,
+);
+adminRoutes.delete(
+  "/fields/:fieldId/options/:optionId/",
+  authenticateAdmin,
+  deleteFieldOption,
+);
 
 // ─── Admin Sport Metrics (Phase 6) ────────────────────────────────────────────
-router.get("/admin/sports/:sportId/metrics/", authenticateAdmin, getSportMetrics);
-router.post("/admin/sports/:sportId/metrics/", authenticateAdmin, createSportMetric);
-router.patch("/admin/metrics/:metricId/", authenticateAdmin, updateSportMetric);
-router.delete("/admin/metrics/:metricId/", authenticateAdmin, deleteSportMetric);
-
+adminRoutes.get(
+  "/sports/:sportId/metrics/",
+  authenticateAdmin,
+  getSportMetrics,
+);
+adminRoutes.post(
+  "/sports/:sportId/metrics/",
+  authenticateAdmin,
+  createSportMetric,
+);
+adminRoutes.patch(
+  "/metrics/:metricId/",
+  authenticateAdmin,
+  updateSportMetric,
+);
+adminRoutes.delete(
+  "/metrics/:metricId/",
+  authenticateAdmin,
+  deleteSportMetric,
+);
 
 // ─── Admin Match Review ────────────────────────────────────────────────────────
-router.get("/admin/matches/", authenticateAdmin, listMatchSubmissions);
-router.get("/admin/matches/:matchId/", authenticateAdmin, getMatchSubmission);
-router.patch("/admin/matches/:matchId/approve/", authenticateAdmin, approveMatch);
-router.patch("/admin/matches/:matchId/reject/", authenticateAdmin, rejectMatch);
+adminRoutes.get("/matches/", authenticateAdmin, listMatchSubmissions);
+adminRoutes.get(
+  "/matches/:matchId/",
+  authenticateAdmin,
+  getMatchSubmission,
+);
+adminRoutes.patch(
+  "/matches/:matchId/approve/",
+  authenticateAdmin,
+  approveMatch,
+);
+adminRoutes.patch(
+  "/matches/:matchId/reject/",
+  authenticateAdmin,
+  rejectMatch,
+);
 
-
-export default router;
+export default adminRoutes;

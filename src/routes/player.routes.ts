@@ -8,33 +8,51 @@ import {
   updateBasicProfile,
   updateSportProfile,
 } from "../controllers/player/player-sportProfile.controller.js";
-import { createMatch, deleteMatch, getMatch, listApprovedMatches, listMatches, listPendingMatches, listRejectedMatches, updateMatch } from "../controllers/player/player-match.controller.js";
-import { getCareerByTeam, getCareerStats, hideTeam, unhideTeam } from "../controllers/player/player-careerStat.controller.js";
+import {
+  createMatch,
+  deleteMatch,
+  getMatch,
+  listApprovedMatches,
+  listMatches,
+  listPendingMatches,
+  listRejectedMatches,
+  updateMatch,
+} from "../controllers/player/player-match.controller.js";
+import {
+  getCareerByTeam,
+  getCareerStats,
+  hideTeam,
+  unhideTeam,
+} from "../controllers/player/player-careerStat.controller.js";
 
-const router = Router();
+const playerRoutes = Router();
 
 // ─── Player Profile ────────────────────────────────────────────────────────────
-router.get("/player/profile", authenticate, getBasicProfile);
-router.patch("/player/profile", authenticate, updateBasicProfile);
-router.get("/player/sport-profiles", authenticate, listSportProfiles);
-router.post("/player/sport-profiles", authenticate, addSportProfile);
-router.get("/player/sport-profiles/:sportId", authenticate, getSportProfile);
-router.patch("/player/sport-profiles/:sportId", authenticate, updateSportProfile);
+playerRoutes.get("/profile", authenticate, getBasicProfile);
+playerRoutes.patch("/profile", authenticate, updateBasicProfile);
+playerRoutes.get("/sport-profiles", authenticate, listSportProfiles);
+playerRoutes.post("/sport-profiles", authenticate, addSportProfile);
+playerRoutes.get("/sport-profiles/:sportId", authenticate, getSportProfile);
+playerRoutes.patch(
+  "/sport-profiles/:sportId",
+  authenticate,
+  updateSportProfile,
+);
 
 // ─── Player Match Self-Report ────────────────────────────────────────────────
-router.post("/player/matches/", authenticate, createMatch);
-router.get("/player/matches/", authenticate, listMatches);
-router.get("/player/matches/approved/", authenticate, listApprovedMatches);
-router.get("/player/matches/pending/", authenticate, listPendingMatches);
-router.get("/player/matches/rejected/", authenticate, listRejectedMatches);
-router.get("/player/matches/:matchId/", authenticate, getMatch);
-router.patch("/player/matches/:matchId/", authenticate, updateMatch);
-router.delete("/player/matches/:matchId/", authenticate, deleteMatch);
+playerRoutes.post("/matches/", authenticate, createMatch);
+playerRoutes.get("/matches/", authenticate, listMatches);
+playerRoutes.get("/matches/approved/", authenticate, listApprovedMatches);
+playerRoutes.get("/matches/pending/", authenticate, listPendingMatches);
+playerRoutes.get("/matches/rejected/", authenticate, listRejectedMatches);
+playerRoutes.get("/matches/:matchId/", authenticate, getMatch);
+playerRoutes.patch("/matches/:matchId/", authenticate, updateMatch);
+playerRoutes.delete("/matches/:matchId/", authenticate, deleteMatch);
 
 // ─── Player Career Stats + Team Visibility (Phase 5) ─────────────────────────
-router.get("/player/matches/stats/career/", authenticate, getCareerStats);
-router.get("/player/matches/stats/by-team/", authenticate, getCareerByTeam);
-router.post("/player/matches/team-visibility/", authenticate, hideTeam);
-router.delete("/player/matches/team-visibility/", authenticate, unhideTeam);
+playerRoutes.get("/matches/stats/career/", authenticate, getCareerStats);
+playerRoutes.get("/matches/stats/by-team/", authenticate, getCareerByTeam);
+playerRoutes.post("/matches/team-visibility/", authenticate, hideTeam);
+playerRoutes.delete("/matches/team-visibility/", authenticate, unhideTeam);
 
-export default router;
+export default playerRoutes;

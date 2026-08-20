@@ -2,9 +2,8 @@ import { Router } from "express";
 import { authenticate } from "../middleware/auth";
 import { searchOrganisations } from "../controllers/player/player-searchOrg.controller";
 
+const organizationRoutes = Router();
 
-const router = Router();
+organizationRoutes.get("/", authenticate, searchOrganisations);
 
-router.get("/organizations/", authenticate, searchOrganisations);
-
-export default router;
+export default organizationRoutes;

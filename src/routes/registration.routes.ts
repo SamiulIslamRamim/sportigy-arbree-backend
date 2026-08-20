@@ -7,13 +7,13 @@ import {
 } from "../controllers/auth-register.controller.js";
 import { verifyRegistrationOtp } from "../controllers/auth-verify.controller.js";
 
-const router = Router();
+const registrationRoutes = Router();
 
 // ─── Registration ──────────────────────────────────────────────────────────────
-router.get("/sports", listSports);
-router.get("/org-categories", orgCategory);
-router.post("/players/", registerPlayer);
-router.post("/organizations/", registerOrganization);
-router.post("/verify-registration/", verifyRegistrationOtp);
+registrationRoutes.get("/sports", listSports);
+registrationRoutes.get("/org-categories", orgCategory);
+registrationRoutes.post("/players/", registerPlayer);
+registrationRoutes.post("/organizations/", registerOrganization);
+registrationRoutes.post("/verify-registration/", verifyRegistrationOtp);
 
-export default router;
+export default registrationRoutes;
