@@ -34,7 +34,7 @@ app.get("/", (_req, res) => {
   return res.send("Hello from sportigy.");
 });
 
-app.use("/user", authRoutes);
+app.use("/", authRoutes);
 app.use("/", registrationRoutes);
 app.use("/player", playerRoutes);
 app.use("/organizations", organizationRoutes);

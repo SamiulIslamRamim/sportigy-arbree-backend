@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../src/config/prisma";
 import { seedOrganizations } from "./seeds/org.seed";
 import { seedSports } from "./seeds/sport.seed";
+import { seedCricketMatches } from "./seeds/player-match.seed";
 
 
 async function main() {
@@ -18,6 +19,8 @@ async function main() {
   await seedOrganizations();
   //seed sport, category, field, fieldOption
   await seedSports();
+  //Seed Cricket match For ramim
+  await seedCricketMatches();
 
   console.log("DB seeded successfully!");
 }

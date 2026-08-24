@@ -356,6 +356,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 1,
+    metricSlug: "general",
   },
   {
     name: "G",
@@ -391,6 +392,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 4,
+    metricSlug: "general",
   },
   {
     name: "Sh",
@@ -426,6 +428,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 7,
+    metricSlug: "general",
   },
   {
     name: "Tkl",
@@ -437,6 +440,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 8,
+    metricSlug: "defensive",
   },
   {
     name: "CS",
@@ -508,6 +512,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 14,
+    metricSlug: "general",
   },
   {
     name: "RC",
@@ -519,6 +524,7 @@ const footballMatchFields: FieldSeed[] = [
     filterable: true,
     sortable: true,
     displayOrder: 15,
+    metricSlug: "general",
   },
 ];
 
@@ -721,6 +727,7 @@ export async function seedSports() {
   await seedMetrics(football.id, [
     { name: "Offensive", slug: "offensive", displayOrder: 1 },
     { name: "Goalkeeping", slug: "goalkeeping", displayOrder: 2 },
+    { name: "General", slug: "general", displayOrder: 3 },
   ]);
 
   await seedMetrics(cricket.id, [
