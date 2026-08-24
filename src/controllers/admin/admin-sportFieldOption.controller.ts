@@ -22,7 +22,6 @@ import {
   assertSportExists,
   parseBody,
   parseParams,
-  parseQueryEnum,
   slugify,
 } from "../../utils/helper";
 

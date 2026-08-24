@@ -223,7 +223,7 @@ const buildSideCte = (userId: string, sportId: string): Prisma.Sql =>
         ELSE NULL
       END AS team_name
     FROM player_matches pm
-    WHERE pm.user_id = ${userId}::uuid
+    WHERE pm.player_id = ${userId}::uuid
       AND pm.sport_id = ${sportId}::uuid
       AND pm.status = 'APPROVED'::"ApprovalStatus"
       AND pm.player_side IS NOT NULL
@@ -250,7 +250,7 @@ export const getCareerStats = asyncHandler(
         FROM player_matches pm
         JOIN player_match_field_values fv ON fv.player_match_id = pm.id
         JOIN sport_fields f ON f.id = fv.field_id
-        WHERE pm.user_id = ${userId}::uuid
+        WHERE pm.player_id = ${userId}::uuid
           AND pm.sport_id = ${sportId}::uuid
           AND pm.status = 'APPROVED'::"ApprovalStatus"
           AND f.type = 'NUMBER'::"FieldType"

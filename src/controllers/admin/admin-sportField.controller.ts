@@ -17,7 +17,11 @@ import {
 } from "../../utils/helper";
 import { prisma } from "../../config/prisma";
 import { ResponseHandler } from "../../utils/Responsehandler";
-import { FieldSection, FieldType, FormulaRole } from "../../generated/prisma/enums";
+import {
+  FieldSection,
+  FieldType,
+  FormulaRole,
+} from "../../generated/prisma/enums";
 import { Prisma } from "../../generated/prisma/client";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { AppError } from "../../utils/AppError";
@@ -57,7 +61,9 @@ const validateComputedConfig = async (
     });
     if (!metric) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-        data: { metricId: "Metric does not belong to this sport or does not exist" },
+        data: {
+          metricId: "Metric does not belong to this sport or does not exist",
+        },
       });
     }
   }
@@ -75,14 +81,18 @@ const validateComputedConfig = async (
     }
     if (effectiveRequired) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-        data: { required: "A computed field can never be required (value is derived)" },
+        data: {
+          required: "A computed field can never be required (value is derived)",
+        },
       });
     }
 
     if (opts.requireComponents) {
       if (components.length === 0) {
         throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-          data: { formulaComponents: "At least one formula component is required" },
+          data: {
+            formulaComponents: "At least one formula component is required",
+          },
         });
       }
 
@@ -94,12 +104,25 @@ const validateComputedConfig = async (
       );
       if (numerators.length === 0) {
         throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-          data: { formulaComponents: "At least one NUMERATOR component is required" },
+          data: {
+            formulaComponents: "At least one NUMERATOR component is required",
+          },
         });
       }
       if (denominators.length === 0) {
         throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-          data: { formulaComponents: "At least one DENOMINATOR component is required" },
+          data: {
+            formulaComponents: "At least one DENOMINATOR component is required",
+          },
+        });
+      }
+      const numeratorIds = new Set(numerators.map((c) => c.sourceFieldId));
+      if (denominators.some((c) => numeratorIds.has(c.sourceFieldId))) {
+        throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+          data: {
+            formulaComponents:
+              "A source field cannot be used as both NUMERATOR and DENOMINATOR",
+          },
         });
       }
 
@@ -108,7 +131,9 @@ const validateComputedConfig = async (
       );
       if (componentSelfRef) {
         throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-          data: { formulaComponents: "A computed field cannot reference itself" },
+          data: {
+            formulaComponents: "A computed field cannot reference itself",
+          },
         });
       }
 
@@ -120,7 +145,10 @@ const validateComputedConfig = async (
       );
       if (dupComponent) {
         throw new AppError(ERROR_CODES.DUPLICATE_ENTRY, {
-          data: { formulaComponents: "Duplicate (sourceFieldId, role) in formula components" },
+          data: {
+            formulaComponents:
+              "Duplicate (sourceFieldId, role) in formula components",
+          },
         });
       }
     }
@@ -137,22 +165,30 @@ const validateComputedConfig = async (
         const source = sourceMap.get(c.sourceFieldId);
         if (!source) {
           throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-            data: { sourceFieldId: `Unknown or not-in-sport source field: ${c.sourceFieldId}` },
+            data: {
+              sourceFieldId: `Unknown or not-in-sport source field: ${c.sourceFieldId}`,
+            },
           });
         }
         if (source.section !== FieldSection.MATCH) {
           throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-            data: { sourceFieldId: `Source field must be in MATCH section: ${c.sourceFieldId}` },
+            data: {
+              sourceFieldId: `Source field must be in MATCH section: ${c.sourceFieldId}`,
+            },
           });
         }
         if (source.type !== FieldType.NUMBER) {
           throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-            data: { sourceFieldId: `Source field must be of type NUMBER: ${c.sourceFieldId}` },
+            data: {
+              sourceFieldId: `Source field must be of type NUMBER: ${c.sourceFieldId}`,
+            },
           });
         }
         if (source.isComputed) {
           throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-            data: { sourceFieldId: `Source field cannot itself be computed: ${c.sourceFieldId}` },
+            data: {
+              sourceFieldId: `Source field cannot itself be computed: ${c.sourceFieldId}`,
+            },
           });
         }
       }
@@ -183,7 +219,9 @@ export const getSportFields = asyncHandler(
         options: { orderBy: { createdAt: "asc" } },
         metric: { select: { id: true, name: true, slug: true } },
         formulaComponents: {
-          include: { sourceField: { select: { id: true, name: true, slug: true } } },
+          include: {
+            sourceField: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
     });
@@ -208,7 +246,9 @@ export const createSportField = asyncHandler(
 
     if (hasFormula && !isComputed) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-        data: { formulaComponents: "Formula components require isComputed = true" },
+        data: {
+          formulaComponents: "Formula components require isComputed = true",
+        },
       });
     }
 
@@ -217,6 +257,18 @@ export const createSportField = asyncHandler(
       type === FieldType.SELECT || type === FieldType.MULTI_SELECT;
     if (hasOptions && !isSelectType) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT);
+    }
+    if (section === FieldSection.MATCH && !body.metricId) {
+      throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+        data: { metricId: "metricId is required for MATCH section fields" },
+      });
+    }
+    if (section === FieldSection.PROFILE && body.metricId) {
+      throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+        data: {
+          metricId: "metricId is not allowed for PROFILE section fields",
+        },
+      });
     }
 
     await validateComputedConfig(sportId, {
@@ -261,10 +313,14 @@ export const createSportField = asyncHandler(
         ...(isComputed && {
           isComputed: true,
           formulaMultiplier:
-            body.formulaMultiplier !== undefined ? body.formulaMultiplier : null,
+            body.formulaMultiplier !== undefined
+              ? body.formulaMultiplier
+              : null,
         }),
         ...(hasFormula && {
-          formulaComponents: { create: formulaComponentsData(formulaComponents) },
+          formulaComponents: {
+            create: formulaComponentsData(formulaComponents),
+          },
         }),
         ...(hasOptions && {
           options: {
@@ -281,7 +337,9 @@ export const createSportField = asyncHandler(
         options: { orderBy: { createdAt: "asc" } },
         metric: { select: { id: true, name: true, slug: true } },
         formulaComponents: {
-          include: { sourceField: { select: { id: true, name: true, slug: true } } },
+          include: {
+            sourceField: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
     });
@@ -300,7 +358,9 @@ export const getSportFieldById = asyncHandler(
         options: { orderBy: { createdAt: "asc" } },
         metric: { select: { id: true, name: true, slug: true } },
         formulaComponents: {
-          include: { sourceField: { select: { id: true, name: true, slug: true } } },
+          include: {
+            sourceField: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
     });
@@ -339,6 +399,8 @@ export const updateSportField = asyncHandler(
       (body.name !== undefined ? slugify(name) : existing.slug);
     const section = body.section ?? existing.section;
     const type = body.type ?? existing.type;
+    const metricId =
+      body.metricId !== undefined ? body.metricId : existing.metricId;
 
     if (
       body.name !== undefined ||
@@ -358,24 +420,43 @@ export const updateSportField = asyncHandler(
     const hasFormula = formulaComponents.length > 0;
 
     // A computed field's required flag is always forced to false.
-    const nextRequired: boolean | undefined =
-      effectiveIsComputed
-        ? false
-        : body.required !== undefined
-          ? body.required
-          : existing.required;
+    const nextRequired: boolean | undefined = effectiveIsComputed
+      ? false
+      : body.required !== undefined
+        ? body.required
+        : existing.required;
 
     if (hasFormula && !effectiveIsComputed) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-        data: { formulaComponents: "Formula components require isComputed = true" },
+        data: {
+          formulaComponents: "Formula components require isComputed = true",
+        },
       });
     }
-    if (body.formulaComponents !== undefined && effectiveIsComputed && !hasFormula) {
+    if (
+      body.formulaComponents !== undefined &&
+      effectiveIsComputed &&
+      !hasFormula
+    ) {
       throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-        data: { formulaComponents: "A computed field needs at least one formula component" },
+        data: {
+          formulaComponents:
+            "A computed field needs at least one formula component",
+        },
       });
     }
-
+    if (section === FieldSection.MATCH && !metricId) {
+  throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+    data: { metricId: "metricId is required for MATCH section fields" },
+  });
+}
+    if (section === FieldSection.PROFILE && metricId) {
+      throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+        data: {
+          metricId: "metricId is not allowed for PROFILE section fields",
+        },
+      });
+    }
     const wasComputed = existing.isComputed;
     await validateComputedConfig(sportId, {
       isComputed: effectiveIsComputed,
@@ -385,7 +466,7 @@ export const updateSportField = asyncHandler(
       section,
       type,
       required: nextRequired,
-      metricId: body.metricId !== undefined ? body.metricId : existing.metricId,
+      metricId,
       formulaComponents,
       existingId: existing.id,
     });
@@ -394,18 +475,25 @@ export const updateSportField = asyncHandler(
       const data: Prisma.SportFieldUncheckedUpdateInput = {
         ...(body.name !== undefined && { name }),
         ...(body.slug !== undefined && { slug }),
-        ...(body.name !== undefined && body.slug === undefined && { slug: slugify(name) }),
+        ...(body.name !== undefined &&
+          body.slug === undefined && { slug: slugify(name) }),
         ...(body.section !== undefined && { section }),
         ...(body.type !== undefined && { type }),
-        ...(body.description !== undefined && { description: body.description }),
+        ...(body.description !== undefined && {
+          description: body.description,
+        }),
         ...(nextRequired !== undefined && { required: nextRequired }),
         ...(body.searchable !== undefined && { searchable: body.searchable }),
         ...(body.filterable !== undefined && { filterable: body.filterable }),
         ...(body.sortable !== undefined && { sortable: body.sortable }),
-        ...(body.displayOrder !== undefined && { displayOrder: body.displayOrder }),
+        ...(body.displayOrder !== undefined && {
+          displayOrder: body.displayOrder,
+        }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
         ...(body.metricId !== undefined && { metricId: body.metricId ?? null }),
-        ...(body.isComputed !== undefined && { isComputed: effectiveIsComputed }),
+        ...(body.isComputed !== undefined && {
+          isComputed: effectiveIsComputed,
+        }),
         ...(body.formulaMultiplier !== undefined && {
           formulaMultiplier: body.formulaMultiplier,
         }),
@@ -436,7 +524,9 @@ export const updateSportField = asyncHandler(
           options: { orderBy: { createdAt: "asc" } },
           metric: { select: { id: true, name: true, slug: true } },
           formulaComponents: {
-            include: { sourceField: { select: { id: true, name: true, slug: true } } },
+            include: {
+              sourceField: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
       });
@@ -467,4 +557,3 @@ export const deleteSportField = asyncHandler(
     });
   },
 );
-
