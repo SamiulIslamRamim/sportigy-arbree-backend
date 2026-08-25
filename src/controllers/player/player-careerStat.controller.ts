@@ -1,11 +1,11 @@
 import { Response } from "express";
 import { ApprovalStatus, FieldSection, FieldType, FormulaRole, MatchResult, Prisma, UserRole } from "../../generated/prisma/client";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { AppError } from "../../utils/AppError";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { AuthenticatedRequest } from "../../types/auth.type";
-import { parseBody, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper";
+import { AuthenticatedRequest } from "../../types/auth.type.js";
+import { parseBody, parseParams, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper";
 import { byTeamStatsQuerySchema, hiddenQuerySchema, sportQuerySchema, teamVisibilitySchema } from "../../schemas/career.schema";
 import { ResponseHandler } from "../../utils/Responsehandler";
 import {
@@ -20,6 +20,7 @@ import {
   TeamRow,
   TeamStatRow,
 } from "../../types/career.type";
+import { sportParamsSchema } from "../../schemas/sport.schema";
 
 const UNCATEGORIZED_KEY = "__uncategorized__";
 const OTHER_METRIC_KEY = "__other__";
@@ -42,12 +43,13 @@ const toNumber = (value: CountValue | NumericValue): number => {
   return Number(value);
 };
 
-const assertActiveSport = async (sportId: string): Promise<void> => {
+const assertActiveSport = async (sportId: string): Promise<{ id: string }> => {
   const sport = await prisma.sport.findUnique({
     where: { id: sportId },
     select: { id: true, isActive: true },
   });
   if (!sport || !sport.isActive) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
+  return sport;
 };
 
 /**
@@ -64,6 +66,7 @@ const fetchSportFieldConfig = async (
       select: {
         id: true,
         name: true,
+        slug: true,
         displayOrder: true,
         isComputed: true,
         metricId: true,
@@ -82,6 +85,7 @@ const fetchSportFieldConfig = async (
   const fields: CareerFieldConfig[] = raw.map((f) => ({
     id: f.id,
     name: f.name,
+    slug: f.slug,
     displayOrder: f.displayOrder,
     isComputed: f.isComputed,
     metricId: f.metricId,
@@ -164,6 +168,7 @@ const buildMetrics = (
         fieldOutputs.push({
           fieldId: f.id,
           name: f.name,
+          slug: f.slug,
           metricId: f.metricId,
           isComputed: false,
           total,
@@ -180,6 +185,7 @@ const buildMetrics = (
       fieldOutputs.push({
         fieldId: f.id,
         name: f.name,
+        slug: f.slug,
         metricId: f.metricId,
         isComputed: true,
         value,
@@ -200,7 +206,7 @@ const round2 = (value: number): number =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
 // Keep the team_key CASE in sync with helper.ts teamKeyFor()/normalizeTeamName().
-const buildSideCte = (userId: string, sportId: string): Prisma.Sql =>
+const buildSideCte = (userId: string, sportId: string, categoryId?: string): Prisma.Sql =>
   Prisma.sql`(
     SELECT
       pm.id AS match_id,
@@ -227,6 +233,7 @@ const buildSideCte = (userId: string, sportId: string): Prisma.Sql =>
       AND pm.sport_id = ${sportId}::uuid
       AND pm.status = 'APPROVED'::"ApprovalStatus"
       AND pm.player_side IS NOT NULL
+      ${categoryId ? Prisma.sql`AND pm.sport_category_id = ${categoryId}::uuid` : Prisma.empty}
   )`;
 
 export const getCareerStats = asyncHandler(
@@ -254,7 +261,7 @@ export const getCareerStats = asyncHandler(
           AND pm.sport_id = ${sportId}::uuid
           AND pm.status = 'APPROVED'::"ApprovalStatus"
           AND f.type = 'NUMBER'::"FieldType"
-          AND f.is_computed = true
+          AND f.is_computed = false
         GROUP BY pm.sport_category_id, fv.field_id, f.name
       `,
       fetchSportFieldConfig(sportId),
@@ -314,11 +321,12 @@ export const getCareerStats = asyncHandler(
 export const getCareerByTeam = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = requireUserId(req);
-    const { sportId } = parseBody(byTeamStatsQuerySchema, req.query);
+    // const { sportId } = parseBody(byTeamStatsQuerySchema, req.query);
+    const { sportId, categoryId } = parseBody(byTeamStatsQuerySchema, req.query);
+    const sideCte = buildSideCte(userId, sportId, categoryId);
     const hidden = parseQueryEnum(req.query.hidden, hiddenQuerySchema) ?? "include";
     await assertActiveSport(sportId);
 
-    const sideCte = buildSideCte(userId, sportId);
 
     const [hiddenRows, teamRows, statRows, fieldConfig] = await Promise.all([
       prisma.playerTeamVisibility.findMany({
@@ -469,5 +477,21 @@ export const unhideTeam = asyncHandler(
     });
 
     ResponseHandler.success(res, "Team unhidden.", { teamKey });
+  },
+);
+
+
+export const getSportCategories = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { sportId } = parseParams(sportParamsSchema, req.params);
+    await assertActiveSport(sportId);
+
+    const categories = await prisma.sportCategory.findMany({
+      where: { sportId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
+    ResponseHandler.success(res, "Data found.", { categories });
   },
 );

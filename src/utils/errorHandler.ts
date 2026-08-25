@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { AppError } from "./AppError";
-import { ResponseHandler } from "./Responsehandler";
-import { ERROR_CODES } from "../constants/errorCodes";
+import { AppError } from "./AppError.js";
+import { ResponseHandler } from "./Responsehandler.js";
+import { ERROR_CODES } from "../constants/errorCodes.js";
 import { ZodError } from "zod";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import { mapPrismaError } from "../constants/prismaErrorMap";
+import { mapPrismaError } from "../constants/prismaErrorMap.js";
 
 
 export const errorHandler = (

@@ -1,7 +1,7 @@
 import { Response } from "express";
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from "../constants/errorMessages";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from "../constants/errorMessages.js";
 import { ApiResponse } from "../types/response";
-import { ERROR_STATUS_MAP } from "../constants/errorstatusMap";
+import { ERROR_STATUS_MAP } from "../constants/errorstatusMap.js";
 
 const toErrorCode = (code: string): string | number =>
   /^\d+$/.test(code) ? Number(code) : code;

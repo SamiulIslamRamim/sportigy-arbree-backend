@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler";
 import { assertNonEmptyUpdate, parseBody, parseParams, slugify } from "../../utils/helper";
 import { createSportSchema, sportParamsSchema, updateSportSchema } from "../../schemas/sport.schema";

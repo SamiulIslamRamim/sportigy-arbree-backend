@@ -21,6 +21,7 @@ import {
 import {
   getCareerByTeam,
   getCareerStats,
+  getSportCategories,
   hideTeam,
   unhideTeam,
 } from "../controllers/player/player-careerStat.controller.js";
@@ -54,5 +55,6 @@ playerRoutes.get("/matches/stats/career/", authenticate, getCareerStats);
 playerRoutes.get("/matches/stats/by-team/", authenticate, getCareerByTeam);
 playerRoutes.post("/matches/team-visibility/", authenticate, hideTeam);
 playerRoutes.delete("/matches/team-visibility/", authenticate, unhideTeam);
+playerRoutes.get("/sports/:sportId/categories/", authenticate, getSportCategories);
 
 export default playerRoutes;

@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { asyncHandler } from "../utils/asyncHandler";
-import { JwtRefreshPayload, LoginBody } from "../types/auth.type";
-import { prisma } from "../config/prisma";
+import { JwtRefreshPayload, LoginBody } from "../types/auth.type.js";
+import { prisma } from "../config/prisma.js";
 import { AppError } from "../utils/AppError";
 import { ERROR_CODES } from "../constants/errorCodes";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { ResponseHandler } from "../utils/Responsehandler";
 
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/prisma";
+import { prisma } from "../config/prisma.js";
 import { AppError } from "../utils/AppError";
 import { ERROR_CODES } from "../constants/errorCodes";
 import { asyncHandler } from "../utils/asyncHandler";

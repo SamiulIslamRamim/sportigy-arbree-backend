@@ -1,5 +1,5 @@
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import { ERROR_CODES } from "./errorCodes";
+import { ERROR_CODES } from "./errorCodes.js";
 
 const PRISMA_ERROR_MAP: Record<string, string> = {
   P2000: ERROR_CODES.STRING_EXCEEDS_LENGTH,

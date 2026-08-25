@@ -8,6 +8,7 @@ export const hiddenQuerySchema = z.enum(["include", "exclude"]);
 
 export const byTeamStatsQuerySchema = z.object({
   sportId: z.uuid("Invalid sport id"),
+  categoryId: z.uuid("Invalid category id").optional(),
 });
 
 export const teamVisibilitySchema = z

@@ -1,5 +1,5 @@
 import z from "zod";
-import { FieldSection, FieldType, FormulaRole } from "../generated/prisma/enums";
+import { FieldSection, FieldType, FormulaRole } from "../generated/prisma/enums.js";
 
 export const sportParamsSchema = z.object({
   sportId: z.uuid("Invalid sport id"),

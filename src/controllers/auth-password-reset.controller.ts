@@ -3,10 +3,10 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import otpGenerator from "otp-generator";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type";
+import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type.js";
 import { AppError } from "../utils/AppError";
 import { ERROR_CODES } from "../constants/errorCodes";
-import { prisma } from "../config/prisma";
+import { prisma } from "../config/prisma.js";
 import { sendPasswordResetEmail } from "../utils/mailer";
 import { ResponseHandler } from "../utils/Responsehandler";
 

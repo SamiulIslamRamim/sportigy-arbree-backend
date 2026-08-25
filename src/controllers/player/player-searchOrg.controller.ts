@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { organizationSearchQuerySchema } from "../../schemas/organization.schema";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { AppError } from "../../utils/AppError";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { UserRole } from "../../generated/prisma/enums";
 import { ResponseHandler } from "../../utils/Responsehandler";
 

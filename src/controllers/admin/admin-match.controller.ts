@@ -1,9 +1,9 @@
 import { Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { AuthenticatedRequest } from "../../types/auth.type";
+import { AuthenticatedRequest } from "../../types/auth.type.js";
 import { parseBody, parseParams, parseQueryEnum } from "../../utils/helper";
 import { matchParamsSchema, matchStatusQuerySchema, rejectMatchSchema } from "../../schemas/match.schema";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { AppError } from "../../utils/AppError";

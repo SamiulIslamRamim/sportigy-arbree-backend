@@ -1,4 +1,4 @@
-import { prisma } from "../../src/config/prisma";
+import { prisma } from "../../src/config/prisma.js";
 
 export async function seedOrganizations() {
   const categories = ["Academy", "Bank", "School", "Others"];

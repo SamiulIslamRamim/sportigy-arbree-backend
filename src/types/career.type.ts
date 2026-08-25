@@ -1,5 +1,5 @@
 import { Prisma } from "../generated/prisma/client";
-import { MatchResult } from "../generated/prisma/enums";
+import { MatchResult } from "../generated/prisma/enums.js";
 
 export type CountValue = number | string | null;
 export type NumericValue = number | string | Prisma.Decimal | null;
@@ -39,6 +39,7 @@ export type ResultBreakdown = Record<MatchResult, number>;
 export interface CareerFieldConfig {
   id: string;
   name: string;
+  slug: string;
   displayOrder: number;
   isComputed: boolean;
   metricId: string | null;
@@ -54,8 +55,8 @@ export interface CareerMetricConfig {
 }
 
 export type CareerFieldOutput =
-  | { fieldId: string; name: string; metricId: string | null; isComputed: false; total: number }
-  | { fieldId: string; name: string; metricId: string | null; isComputed: true; value: number | null };
+  | { fieldId: string; name: string; slug: string; metricId: string | null; isComputed: false; total: number }
+  | { fieldId: string; name: string; slug: string; metricId: string | null; isComputed: true; value: number | null };
 
 export interface CareerMetricOutput {
   metric: string;

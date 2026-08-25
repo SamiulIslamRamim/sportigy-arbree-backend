@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { categoryParamsSchema, createSportCategorySchema, sportParamsSchema, updateSportCategorySchema } from "../../schemas/sport.schema";
 import { assertNonEmptyUpdate, assertSportExists, parseBody, parseParams, slugify } from "../../utils/helper";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { AppError } from "../../utils/AppError";

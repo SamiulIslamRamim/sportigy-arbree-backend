@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { JwtRefreshPayload, LoginBody } from "../../types/auth.type";
-import { prisma } from "../../config/prisma";
-import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt";
+import { JwtRefreshPayload, LoginBody } from "../../types/auth.type.js";
+import { prisma } from "../../config/prisma.js";
+import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ERROR_CODES } from "../../constants/errorCodes";
 import { AppError } from "../../utils/AppError";

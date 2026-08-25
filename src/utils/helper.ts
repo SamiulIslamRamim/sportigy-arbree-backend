@@ -1,11 +1,11 @@
 import z from "zod";
-import { ERROR_CODES } from "../constants/errorCodes";
-import { AppError } from "./AppError";
-import { prisma } from "../config/prisma";
-import { AuthenticatedRequest } from "../types/auth.type";
-import { ApprovalStatus, FieldSection, FieldType, PlayerSide, UserRole } from "../generated/prisma/enums";
-import { Prisma } from "../generated/prisma/client";
-import { MatchFieldValueInput, TeamSlotValue } from "../schemas/match.schema";
+import { ERROR_CODES } from "../constants/errorCodes.js";
+import { AppError } from "./AppError.js";
+import { prisma } from "../config/prisma.js";
+import { AuthenticatedRequest } from "../types/auth.type.js";
+import { ApprovalStatus, FieldSection, FieldType, PlayerSide, UserRole } from "../generated/prisma/enums.js";
+import { Prisma } from "../generated/prisma/client.js";
+import { MatchFieldValueInput, TeamSlotValue } from "../schemas/match.schema.js";
 
 const slugify = (value: string): string =>
   value

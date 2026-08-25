@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApprovalStatus, MatchResult, PlayerSide } from "../generated/prisma/enums";
+import { ApprovalStatus, MatchResult, PlayerSide } from "../generated/prisma/enums.js";
 
 export const matchParamsSchema = z.object({
   matchId: z.uuid("Invalid match id"),

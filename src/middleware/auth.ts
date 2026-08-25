@@ -1,8 +1,8 @@
 import { Response, NextFunction } from "express";
-import { AuthenticatedRequest } from "../types/auth.type";
-import { AppError } from "../utils/AppError";
-import { ERROR_CODES } from "../constants/errorCodes";
-import { verifyAccessToken } from "../utils/jwt";
+import { AuthenticatedRequest } from "../types/auth.type.js";
+import { AppError } from "../utils/AppError.js";
+import { ERROR_CODES } from "../constants/errorCodes.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 
 
 

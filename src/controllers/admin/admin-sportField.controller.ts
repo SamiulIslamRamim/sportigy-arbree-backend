@@ -15,7 +15,7 @@ import {
   parseQueryEnum,
   slugify,
 } from "../../utils/helper";
-import { prisma } from "../../config/prisma";
+import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler";
 import {
   FieldSection,

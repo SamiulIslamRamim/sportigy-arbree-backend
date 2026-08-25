@@ -1,5 +1,5 @@
-import { ERROR_MESSAGES } from "../constants/errorMessages";
-import { ERROR_STATUS_MAP } from "../constants/errorstatusMap";
+import { ERROR_MESSAGES } from "../constants/errorMessages.js";
+import { ERROR_STATUS_MAP } from "../constants/errorstatusMap.js";
 
 export class AppError extends Error {
   public readonly code: string;

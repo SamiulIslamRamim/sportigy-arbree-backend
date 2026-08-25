@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { ResponseHandler } from "../utils/Responsehandler";
-import { generateAccessToken, verifyRefreshToken } from "../utils/jwt";
+import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.js";
 import { ERROR_CODES } from "../constants/errorCodes";
 import { AppError } from "../utils/AppError";
-import { prisma } from "../config/prisma";
-import { JwtRefreshPayload, VerifyOtpBody } from "../types/auth.type";
+import { prisma } from "../config/prisma.js";
+import { JwtRefreshPayload, VerifyOtpBody } from "../types/auth.type.js";
 import { asyncHandler } from "../utils/asyncHandler";
 import { PendingPayload } from "../types/pending_registration.type";
 import { verifyOtpSchema } from "../schemas/auth.schema";

@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { prisma } from "../src/config/prisma";
+import { prisma } from "../src/config/prisma.js";
 import { seedOrganizations } from "./seeds/org.seed";
 import { seedSports } from "./seeds/sport.seed";
 import { seedCricketMatches } from "./seeds/player-match.seed";
