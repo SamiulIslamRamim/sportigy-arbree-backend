@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { organizationSearchQuerySchema } from "../../schemas/organization.schema";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { organizationSearchQuerySchema } from "../../schemas/organization.schema.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../config/prisma.js";
-import { UserRole } from "../../generated/prisma/enums";
-import { ResponseHandler } from "../../utils/Responsehandler";
+import { UserRole } from "../../generated/prisma/enums.js";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
 
 
 export const searchOrganisations = asyncHandler(async (req: Request, res: Response) => {

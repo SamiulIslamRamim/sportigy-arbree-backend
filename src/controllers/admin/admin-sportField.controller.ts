@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 import {
   createSportFieldSchema,
   fieldParamsSchema,
   fieldSectionQuerySchema,
   sportParamsSchema,
   updateSportFieldSchema,
-} from "../../schemas/sport.schema";
+} from "../../schemas/sport.schema.js";
 import {
   assertNonEmptyUpdate,
   assertSportExists,
@@ -14,17 +14,17 @@ import {
   parseParams,
   parseQueryEnum,
   slugify,
-} from "../../utils/helper";
+} from "../../utils/helper.js";
 import { prisma } from "../../config/prisma.js";
-import { ResponseHandler } from "../../utils/Responsehandler";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
 import {
   FieldSection,
   FieldType,
   FormulaRole,
-} from "../../generated/prisma/enums";
-import { Prisma } from "../../generated/prisma/client";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
+} from "../../generated/prisma/enums.js";
+import { Prisma } from "../../generated/prisma/client.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
 
 type FormulaComponentInput = { sourceFieldId: string; role: FormulaRole };
 

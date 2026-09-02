@@ -1,13 +1,13 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
-import { asyncHandler } from "../../utils/asyncHandler";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 import { prisma } from "../../config/prisma.js";
-import { ResponseHandler } from "../../utils/Responsehandler";
-import { assertNonEmptyUpdate, parseBody, parseParams, requireUserId } from "../../utils/helper";
-import { addSportProfileSchema, sportProfileParamsSchema, updateBasicProfileSchema, updateSportProfileSchema } from "../../schemas/player.schema";
-import { FieldSection, FieldType } from "../../generated/prisma/enums";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
+import { assertNonEmptyUpdate, parseBody, parseParams, requireUserId } from "../../utils/helper.js";
+import { addSportProfileSchema, sportProfileParamsSchema, updateBasicProfileSchema, updateSportProfileSchema } from "../../schemas/player.schema.js";
+import { FieldSection, FieldType } from "../../generated/prisma/enums.js";
 
 
 

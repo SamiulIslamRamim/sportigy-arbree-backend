@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { ResponseHandler } from "../utils/Responsehandler";
+import { ResponseHandler } from "../utils/Responsehandler.js";
 import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.js";
-import { ERROR_CODES } from "../constants/errorCodes";
-import { AppError } from "../utils/AppError";
+import { ERROR_CODES } from "../constants/errorCodes.js";
+import { AppError } from "../utils/AppError.js";
 import { prisma } from "../config/prisma.js";
 import { JwtRefreshPayload, VerifyOtpBody } from "../types/auth.type.js";
-import { asyncHandler } from "../utils/asyncHandler";
-import { PendingPayload } from "../types/pending_registration.type";
-import { verifyOtpSchema } from "../schemas/auth.schema";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { PendingPayload } from "../types/pending_registration.type.js";
+import { verifyOtpSchema } from "../schemas/auth.schema.js";
 
 
 //todo: add prisma transition here in future

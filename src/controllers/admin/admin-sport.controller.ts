@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 import { prisma } from "../../config/prisma.js";
-import { ResponseHandler } from "../../utils/Responsehandler";
-import { assertNonEmptyUpdate, parseBody, parseParams, slugify } from "../../utils/helper";
-import { createSportSchema, sportParamsSchema, updateSportSchema } from "../../schemas/sport.schema";
-import { AppError } from "../../utils/AppError";
-import { ERROR_CODES } from "../../constants/errorCodes";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
+import { assertNonEmptyUpdate, parseBody, parseParams, slugify } from "../../utils/helper.js";
+import { createSportSchema, sportParamsSchema, updateSportSchema } from "../../schemas/sport.schema.js";
+import { AppError } from "../../utils/AppError.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
 
 export const getSports = asyncHandler(async (req: Request, res: Response) => {
   const { isActive } = req.query;

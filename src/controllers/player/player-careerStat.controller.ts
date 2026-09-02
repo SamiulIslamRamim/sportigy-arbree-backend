@@ -1,13 +1,13 @@
 import { Response } from "express";
-import { ApprovalStatus, FieldSection, FieldType, FormulaRole, MatchResult, Prisma, UserRole } from "../../generated/prisma/client";
+import { ApprovalStatus, FieldSection, FieldType, FormulaRole, MatchResult, Prisma, UserRole } from "../../generated/prisma/client.js";
 import { prisma } from "../../config/prisma.js";
-import { AppError } from "../../utils/AppError";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { asyncHandler } from "../../utils/asyncHandler";
+import { AppError } from "../../utils/AppError.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
-import { parseBody, parseParams, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper";
-import { byTeamStatsQuerySchema, hiddenQuerySchema, sportQuerySchema, teamVisibilitySchema } from "../../schemas/career.schema";
-import { ResponseHandler } from "../../utils/Responsehandler";
+import { parseBody, parseParams, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper.js";
+import { byTeamStatsQuerySchema, hiddenQuerySchema, sportQuerySchema, teamVisibilitySchema } from "../../schemas/career.schema.js";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
 import {
   CareerFieldConfig,
   CareerFieldOutput,
@@ -19,8 +19,8 @@ import {
   ResultBreakdown,
   TeamRow,
   TeamStatRow,
-} from "../../types/career.type";
-import { sportParamsSchema } from "../../schemas/sport.schema";
+} from "../../types/career.type.js";
+import { sportParamsSchema } from "../../schemas/sport.schema.js";
 
 const UNCATEGORIZED_KEY = "__uncategorized__";
 const OTHER_METRIC_KEY = "__other__";
@@ -337,7 +337,7 @@ export const getCareerByTeam = asyncHandler(
         WITH side AS ${sideCte}
         SELECT
           s.team_key AS "teamKey",
-          MIN(s.team_org_id) AS "teamOrgId",
+          MIN(s.team_org_id::text)::uuid AS "teamOrgId",
           MIN(s.team_name) AS "teamName",
           COUNT(*) AS "matchesPlayed",
           COUNT(*) FILTER (WHERE s.result = 'WIN'::"MatchResult") AS "winCount",

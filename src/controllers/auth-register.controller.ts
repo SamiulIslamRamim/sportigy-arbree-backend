@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
-import { AppError } from "../utils/AppError";
-import { ERROR_CODES } from "../constants/errorCodes";
-import { asyncHandler } from "../utils/asyncHandler";
-import { PlayerRegisterBody } from "../types/player.type";
+import { AppError } from "../utils/AppError.js";
+import { ERROR_CODES } from "../constants/errorCodes.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { PlayerRegisterBody } from "../types/player.type.js";
 import bcrypt from "bcryptjs";
-import { generateOtp, getOtpExpiry } from "../utils/otp";
-import { PendingPayload } from "../types/pending_registration.type";
-import { sendOtpEmail } from "../utils/mailer";
-import { ResponseHandler } from "../utils/Responsehandler";
+import { generateOtp, getOtpExpiry } from "../utils/otp.js";
+import { PendingPayload } from "../types/pending_registration.type.js";
+import { sendOtpEmail } from "../utils/mailer.js";
+import { ResponseHandler } from "../utils/Responsehandler.js";
 import { OrganizationRegisterBody } from "../types/organization.type";
 
 

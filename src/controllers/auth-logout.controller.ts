@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ResponseHandler } from "../utils/Responsehandler";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ResponseHandler } from "../utils/Responsehandler.js";
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   res.clearCookie('refreshToken', {

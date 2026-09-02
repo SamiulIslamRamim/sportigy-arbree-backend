@@ -25,6 +25,7 @@ import {
   hideTeam,
   unhideTeam,
 } from "../controllers/player/player-careerStat.controller.js";
+import { getPlayerSportFields } from "../controllers/player/player-sportFields.controller.js";
 
 const playerRoutes = Router();
 
@@ -40,7 +41,11 @@ playerRoutes.patch(
   updateSportProfile,
 );
 
+playerRoutes.post("/matches/team-visibility/", authenticate, hideTeam);
+playerRoutes.delete("/matches/team-visibility/", authenticate, unhideTeam);
+
 // ─── Player Match Self-Report ────────────────────────────────────────────────
+playerRoutes.get("/sports/:sportId/fields/", authenticate, getPlayerSportFields);
 playerRoutes.post("/matches/", authenticate, createMatch);
 playerRoutes.get("/matches/", authenticate, listMatches);
 playerRoutes.get("/matches/approved/", authenticate, listApprovedMatches);
@@ -53,8 +58,6 @@ playerRoutes.delete("/matches/:matchId/", authenticate, deleteMatch);
 // ─── Player Career Stats + Team Visibility (Phase 5) ─────────────────────────
 playerRoutes.get("/matches/stats/career/", authenticate, getCareerStats);
 playerRoutes.get("/matches/stats/by-team/", authenticate, getCareerByTeam);
-playerRoutes.post("/matches/team-visibility/", authenticate, hideTeam);
-playerRoutes.delete("/matches/team-visibility/", authenticate, unhideTeam);
 playerRoutes.get("/sports/:sportId/categories/", authenticate, getSportCategories);
 
 export default playerRoutes;

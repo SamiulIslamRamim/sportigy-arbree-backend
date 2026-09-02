@@ -3,7 +3,7 @@ import { AppError } from "./AppError.js";
 import { ResponseHandler } from "./Responsehandler.js";
 import { ERROR_CODES } from "../constants/errorCodes.js";
 import { ZodError } from "zod";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client.js";
 import { mapPrismaError } from "../constants/prismaErrorMap.js";
 
 

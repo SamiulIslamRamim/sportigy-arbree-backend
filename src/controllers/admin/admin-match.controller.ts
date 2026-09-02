@@ -1,13 +1,13 @@
 import { Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
-import { parseBody, parseParams, parseQueryEnum } from "../../utils/helper";
-import { matchParamsSchema, matchStatusQuerySchema, rejectMatchSchema } from "../../schemas/match.schema";
+import { parseBody, parseParams, parseQueryEnum } from "../../utils/helper.js";
+import { matchParamsSchema, matchStatusQuerySchema, rejectMatchSchema } from "../../schemas/match.schema.js";
 import { prisma } from "../../config/prisma.js";
-import { ResponseHandler } from "../../utils/Responsehandler";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
-import { ApprovalStatus } from "../../generated/prisma/enums";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
+import { ApprovalStatus } from "../../generated/prisma/enums.js";
 
 const MATCH_DETAIL_INCLUDE = {
   sport: { select: { id: true, name: true, slug: true } },

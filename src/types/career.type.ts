@@ -1,4 +1,4 @@
-import { Prisma } from "../generated/prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 import { MatchResult } from "../generated/prisma/enums.js";
 
 export type CountValue = number | string | null;

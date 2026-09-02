@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma.js";
-import { ERROR_CODES } from "../../constants/errorCodes";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
 import {
   createSportFieldOptionSchema,
   createSportFieldSchema,
@@ -11,11 +11,11 @@ import {
   sportParamsSchema,
   updateSportFieldOptionSchema,
   updateSportFieldSchema,
-} from "../../schemas/sport.schema";
-import { AppError } from "../../utils/AppError";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { ResponseHandler } from "../../utils/Responsehandler";
-import { FieldType } from "../../generated/prisma/enums";
+} from "../../schemas/sport.schema.js";
+import { AppError } from "../../utils/AppError.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
+import { FieldType } from "../../generated/prisma/enums.js";
 import {
   assertFieldExists,
   assertNonEmptyUpdate,
@@ -23,7 +23,7 @@ import {
   parseBody,
   parseParams,
   slugify,
-} from "../../utils/helper";
+} from "../../utils/helper.js";
 
 
 export const getFieldOptions = asyncHandler(

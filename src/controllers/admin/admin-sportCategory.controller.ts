@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { categoryParamsSchema, createSportCategorySchema, sportParamsSchema, updateSportCategorySchema } from "../../schemas/sport.schema";
-import { assertNonEmptyUpdate, assertSportExists, parseBody, parseParams, slugify } from "../../utils/helper";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { categoryParamsSchema, createSportCategorySchema, sportParamsSchema, updateSportCategorySchema } from "../../schemas/sport.schema.js";
+import { assertNonEmptyUpdate, assertSportExists, parseBody, parseParams, slugify } from "../../utils/helper.js";
 import { prisma } from "../../config/prisma.js";
-import { ResponseHandler } from "../../utils/Responsehandler";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
 
 
 export const getSportCategories = asyncHandler(

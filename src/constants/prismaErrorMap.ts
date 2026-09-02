@@ -1,4 +1,4 @@
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client.js";
 import { ERROR_CODES } from "./errorCodes.js";
 
 const PRISMA_ERROR_MAP: Record<string, string> = {

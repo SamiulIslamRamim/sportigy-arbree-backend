@@ -2,13 +2,13 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import otpGenerator from "otp-generator";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { ForgotPasswordBody, ResetPasswordBody } from "../types/auth.type.js";
-import { AppError } from "../utils/AppError";
-import { ERROR_CODES } from "../constants/errorCodes";
+import { AppError } from "../utils/AppError.js";
+import { ERROR_CODES } from "../constants/errorCodes.js";
 import { prisma } from "../config/prisma.js";
-import { sendPasswordResetEmail } from "../utils/mailer";
-import { ResponseHandler } from "../utils/Responsehandler";
+import { sendPasswordResetEmail } from "../utils/mailer.js";
+import { ResponseHandler } from "../utils/Responsehandler.js";
 
 
 export const sendOtp = asyncHandler(async (req: Request, res: Response) => {

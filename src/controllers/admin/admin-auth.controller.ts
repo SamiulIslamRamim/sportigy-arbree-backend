@@ -3,10 +3,10 @@ import bcrypt from "bcryptjs";
 import { JwtRefreshPayload, LoginBody } from "../../types/auth.type.js";
 import { prisma } from "../../config/prisma.js";
 import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { ERROR_CODES } from "../../constants/errorCodes";
-import { AppError } from "../../utils/AppError";
-import { ResponseHandler } from "../../utils/Responsehandler";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { AppError } from "../../utils/AppError.js";
+import { ResponseHandler } from "../../utils/Responsehandler.js";
 
 
 const ADMIN_COOKIE_OPTIONS = {

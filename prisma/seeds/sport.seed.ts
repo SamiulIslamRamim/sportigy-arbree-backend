@@ -1,5 +1,5 @@
 import { prisma } from "../../src/config/prisma.js";
-import { FieldSection, FieldType, FormulaRole } from "../../src/generated/prisma/client";
+import { FieldSection, FieldType, FormulaRole } from "../../src/generated/prisma/client.js";
 
 type FieldSeed = {
   name: string;

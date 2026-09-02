@@ -5,7 +5,7 @@ import {
   FieldType,
   MatchResult,
   PlayerSide,
-} from "../../src/generated/prisma/client";
+} from "../../src/generated/prisma/client.js";
 
 const PLAYER_USER_ID = "01221197-a625-4987-9360-e88d4b179d7b";
 const SPORT_SLUG = "cricket";
