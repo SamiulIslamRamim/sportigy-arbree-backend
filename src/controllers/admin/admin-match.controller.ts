@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
-import { parseBody, parseParams, parseQueryEnum } from "../../utils/helper.js";
+import { parseBody, parseParams, parseQueryEnum, requireUserId } from "../../utils/helper.js";
 import { matchParamsSchema, matchStatusQuerySchema, rejectMatchSchema } from "../../schemas/match.schema.js";
 import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler.js";
@@ -59,7 +59,7 @@ export const getMatchSubmission = asyncHandler(
 export const approveMatch = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {
     const { matchId } = parseParams(matchParamsSchema, req.params);
-    const adminId = req.user?.id;
+    const adminId = requireUserId(req);
     if (!adminId) throw new AppError(ERROR_CODES.UNAUTHORIZED);
 
     const existing = await prisma.playerMatch.findUnique({
@@ -90,7 +90,7 @@ export const rejectMatch = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {
     const { matchId } = parseParams(matchParamsSchema, req.params);
     const body = parseBody(rejectMatchSchema, req.body);
-    const adminId = req.user?.id;
+    const adminId = requireUserId(req);
     if (!adminId) throw new AppError(ERROR_CODES.UNAUTHORIZED);
 
     const existing = await prisma.playerMatch.findUnique({

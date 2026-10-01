@@ -3,14 +3,9 @@ import { prisma } from "../../config/prisma.js";
 import { ERROR_CODES } from "../../constants/errorCodes.js";
 import {
   createSportFieldOptionSchema,
-  createSportFieldSchema,
   fieldIdParamSchema,
-  fieldParamsSchema,
-  fieldSectionQuerySchema,
   optionParamsSchema,
-  sportParamsSchema,
   updateSportFieldOptionSchema,
-  updateSportFieldSchema,
 } from "../../schemas/sport.schema.js";
 import { AppError } from "../../utils/AppError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
@@ -19,7 +14,6 @@ import { FieldType } from "../../generated/prisma/enums.js";
 import {
   assertFieldExists,
   assertNonEmptyUpdate,
-  assertSportExists,
   parseBody,
   parseParams,
   slugify,

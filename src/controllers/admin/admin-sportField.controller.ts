@@ -28,16 +28,17 @@ import { AppError } from "../../utils/AppError.js";
 
 type FormulaComponentInput = { sourceFieldId: string; role: FormulaRole };
 
-/**
- * Server-side constraint checks for a field that is (or is becoming) computed.
- *  - type must be NUMBER, section MATCH, required forced false
- *  - metricId (if provided) must exist, belong to the sport, and be active (computed or not)
- *  - formulaComponents: at least one NUMERATOR + one DENOMINATOR, no self-reference,
- *    every source field in the same sport, section MATCH, type NUMBER, isComputed false.
- *
- * `requireComponents` is only true when the caller must supply components now
- * (create-as-computed, or an update that replaces components / turns computed on).
- */
+const FIELD_INCLUDE = {
+  options: { orderBy: { createdAt: "asc" } },
+  metric: { select: { id: true, name: true, slug: true } },
+  formulaComponents: {
+    include: {
+      sourceField: { select: { id: true, name: true, slug: true } },
+    },
+  },
+} as const;
+
+
 const validateComputedConfig = async (
   sportId: string,
   opts: {
@@ -196,11 +197,11 @@ const validateComputedConfig = async (
   }
 };
 
-const formulaComponentsData = (components: FormulaComponentInput[]) =>
-  components.map((c) => ({
-    sourceFieldId: c.sourceFieldId,
-    role: c.role,
-  }));
+// const formulaComponentsData = (components: FormulaComponentInput[]) =>
+//   components.map((c) => ({
+//     sourceFieldId: c.sourceFieldId,
+//     role: c.role,
+//   }));
 
 export const getSportFields = asyncHandler(
   async (req: Request, res: Response) => {
@@ -215,15 +216,7 @@ export const getSportFields = asyncHandler(
         ...(section !== undefined && { section }),
       },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-      include: {
-        options: { orderBy: { createdAt: "asc" } },
-        metric: { select: { id: true, name: true, slug: true } },
-        formulaComponents: {
-          include: {
-            sourceField: { select: { id: true, name: true, slug: true } },
-          },
-        },
-      },
+      include: {...FIELD_INCLUDE},
     });
 
     ResponseHandler.success(res, "Data found.", { fields });
@@ -319,7 +312,7 @@ export const createSportField = asyncHandler(
         }),
         ...(hasFormula && {
           formulaComponents: {
-            create: formulaComponentsData(formulaComponents),
+            create: formulaComponents,
           },
         }),
         ...(hasOptions && {
@@ -333,15 +326,7 @@ export const createSportField = asyncHandler(
           },
         }),
       },
-      include: {
-        options: { orderBy: { createdAt: "asc" } },
-        metric: { select: { id: true, name: true, slug: true } },
-        formulaComponents: {
-          include: {
-            sourceField: { select: { id: true, name: true, slug: true } },
-          },
-        },
-      },
+      include: {...FIELD_INCLUDE},
     });
 
     ResponseHandler.success(res, "Field created successfully.", { field }, 201);
@@ -354,15 +339,7 @@ export const getSportFieldById = asyncHandler(
 
     const field = await prisma.sportField.findFirst({
       where: { id: fieldId, sportId },
-      include: {
-        options: { orderBy: { createdAt: "asc" } },
-        metric: { select: { id: true, name: true, slug: true } },
-        formulaComponents: {
-          include: {
-            sourceField: { select: { id: true, name: true, slug: true } },
-          },
-        },
-      },
+      include: {...FIELD_INCLUDE},
     });
     if (!field) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
 
@@ -510,7 +487,7 @@ export const updateSportField = asyncHandler(
         });
         if (formulaComponents.length > 0) {
           await tx.sportFieldFormulaComponent.createMany({
-            data: formulaComponentsData(formulaComponents).map((c) => ({
+            data: formulaComponents.map((c) => ({
               ...c,
               computedFieldId: fieldId,
             })),
@@ -520,15 +497,7 @@ export const updateSportField = asyncHandler(
 
       return tx.sportField.findUniqueOrThrow({
         where: { id: fieldId },
-        include: {
-          options: { orderBy: { createdAt: "asc" } },
-          metric: { select: { id: true, name: true, slug: true } },
-          formulaComponents: {
-            include: {
-              sourceField: { select: { id: true, name: true, slug: true } },
-            },
-          },
-        },
+        include: {...FIELD_INCLUDE},
       });
     });
 

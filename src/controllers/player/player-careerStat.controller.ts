@@ -5,7 +5,7 @@ import { AppError } from "../../utils/AppError.js";
 import { ERROR_CODES } from "../../constants/errorCodes.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AuthenticatedRequest } from "../../types/auth.type.js";
-import { parseBody, parseParams, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper.js";
+import { assertActiveSport, parseBody, parseParams, parseQueryEnum, requireUserId, teamKeyFor } from "../../utils/helper.js";
 import { byTeamStatsQuerySchema, hiddenQuerySchema, sportQuerySchema, teamVisibilitySchema } from "../../schemas/career.schema.js";
 import { ResponseHandler } from "../../utils/Responsehandler.js";
 import {
@@ -33,24 +33,8 @@ const emptyBreakdown = (): ResultBreakdown => ({
   [MatchResult.NO_RESULT]: 0,
 });
 
-const toNumber = (value: CountValue | NumericValue): number => {
-  if (value === null || value === undefined) return 0;
-  if (typeof value === "number") return value;
-  if (typeof value === "string" && value !== "") return Number(value);
-  if (typeof value === "object" && typeof (value as { toNumber?: () => number }).toNumber === "function") {
-    return (value as { toNumber(): number }).toNumber();
-  }
-  return Number(value);
-};
+const toNumber = (value: CountValue | NumericValue): number => Number(value ?? 0);
 
-const assertActiveSport = async (sportId: string): Promise<{ id: string }> => {
-  const sport = await prisma.sport.findUnique({
-    where: { id: sportId },
-    select: { id: true, isActive: true },
-  });
-  if (!sport || !sport.isActive) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
-  return sport;
-};
 
 /**
  * Loads the sport's stat-bearing MATCH NUMBER fields (raw inputs + computed)
@@ -321,7 +305,6 @@ export const getCareerStats = asyncHandler(
 export const getCareerByTeam = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = requireUserId(req);
-    // const { sportId } = parseBody(byTeamStatsQuerySchema, req.query);
     const { sportId, categoryId } = parseBody(byTeamStatsQuerySchema, req.query);
     const sideCte = buildSideCte(userId, sportId, categoryId);
     const hidden = parseQueryEnum(req.query.hidden, hiddenQuerySchema) ?? "include";
@@ -452,7 +435,6 @@ export const hideTeam = asyncHandler(
     }
 
     const teamKey = teamKeyFor({ teamOrgId: body.teamOrgId, teamName: body.teamName });
-    if (!teamKey) throw new AppError(ERROR_CODES.REQUIRED_FIELD_MISSING);
 
     await prisma.playerTeamVisibility.upsert({
       where: { userId_sportId_teamKey: { userId, sportId: body.sportId, teamKey } },

@@ -76,12 +76,3 @@ export const ERROR_MESSAGES: Record<string, string> = {
   '1705': 'Invalid state transition',
   '1706': 'Operation cancelled',
 };
-
-export const SUCCESS_MESSAGES: Record<string, string> = {
-  data_found: 'Data found',
-  no_data_found: 'No data found',
-  not_found: 'Not found',
-  update_successfully: 'Updated successfully',
-  created_successfully: 'Created successfully',
-  deleted_successfully: 'Deleted successfully',
-};

@@ -5,7 +5,7 @@ import { AppError } from "../../utils/AppError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler.js";
-import { assertNonEmptyUpdate, assertPlayerSideMatchesTeam, derivePlayerMatch, fetchPlayerMatches, parseBody, parseParams, requireUserId, resolveTeamSlot, teamOrgInclude, validateMatchValues } from "../../utils/helper.js";
+import { assertActiveSport, assertNonEmptyUpdate, assertPlayerSideMatchesTeam, derivePlayerMatch, fetchPlayerMatches, parseBody, parseParams, requireUserId, resolveTeamSlot, teamOrgInclude, validateMatchValues } from "../../utils/helper.js";
 import { createMatchSchema, matchParamsSchema, updateMatchSchema } from "../../schemas/match.schema.js";
 import { ApprovalStatus } from "../../generated/prisma/client.js";
 
@@ -16,13 +16,7 @@ export const createMatch = asyncHandler(
     const body = parseBody(createMatchSchema, req.body);
 
     const submission = await prisma.$transaction(async (tx) => {
-      const sport = await tx.sport.findUnique({
-        where: { id: body.sportId },
-        select: { id: true, isActive: true },
-      });
-      if (!sport || !sport.isActive) {
-        throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
-      }
+      const sport = await assertActiveSport(body.sportId); 
 
       if (body.sportCategoryId !== undefined && body.sportCategoryId !== null) {
         const category = await tx.sportCategory.findFirst({
@@ -78,29 +72,16 @@ export const listMatches = asyncHandler(
   },
 );
 
-export const listApprovedMatches = asyncHandler(
-  async (req: AuthenticatedRequest, res: Response) => {
+const listMatchesByStatus = (status: ApprovalStatus) =>
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = requireUserId(req);
-    const matches = await fetchPlayerMatches(userId, ApprovalStatus.APPROVED);
+    const matches = await fetchPlayerMatches(userId, status);
     ResponseHandler.success(res, "Data found.", { matches });
-  },
-);
+  });
 
-export const listPendingMatches = asyncHandler(
-  async (req: AuthenticatedRequest, res: Response) => {
-    const userId = requireUserId(req);
-    const matches = await fetchPlayerMatches(userId, ApprovalStatus.PENDING);
-    ResponseHandler.success(res, "Data found.", { matches });
-  },
-);
-
-export const listRejectedMatches = asyncHandler(
-  async (req: AuthenticatedRequest, res: Response) => {
-    const userId = requireUserId(req);
-    const matches = await fetchPlayerMatches(userId, ApprovalStatus.REJECTED);
-    ResponseHandler.success(res, "Data found.", { matches });
-  },
-);
+export const listApprovedMatches = listMatchesByStatus(ApprovalStatus.APPROVED);
+export const listPendingMatches = listMatchesByStatus(ApprovalStatus.PENDING);
+export const listRejectedMatches = listMatchesByStatus(ApprovalStatus.REJECTED);
 
 export const getMatch = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {

@@ -5,7 +5,7 @@ import { AppError } from "../../utils/AppError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { prisma } from "../../config/prisma.js";
 import { ResponseHandler } from "../../utils/Responsehandler.js";
-import { assertNonEmptyUpdate, parseBody, parseParams, requireUserId } from "../../utils/helper.js";
+import { assertActiveSport, assertNonEmptyUpdate, assertOptionValid, parseBody, parseParams, requireUserId } from "../../utils/helper.js";
 import { addSportProfileSchema, sportProfileParamsSchema, updateBasicProfileSchema, updateSportProfileSchema } from "../../schemas/player.schema.js";
 import { FieldSection, FieldType } from "../../generated/prisma/enums.js";
 
@@ -106,10 +106,7 @@ export const addSportProfile = asyncHandler(
     const userId = requireUserId(req);
     const body = parseBody(addSportProfileSchema, req.body);
 
-    const sport = await prisma.sport.findUnique({ where: { id: body.sportId } });
-    if (!sport || !sport.isActive) {
-      throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
-    }
+    const sport = await assertActiveSport(body.sportId);
 
     const existing = await prisma.playerSportProfile.findUnique({
       where: { userId_sportId: { userId, sportId: body.sportId } },
@@ -188,27 +185,14 @@ export const updateSportProfile = asyncHandler(
         const fieldMap = new Map(fields.map((f) => [f.id, f]));
 
         for (const v of body.values) {
-          const field = fieldMap.get(v.fieldId);
-          if (!field) {
-            throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-              data: { fieldId: `Unknown or inactive profile field: ${v.fieldId}` },
-            });
-          }
-          const isSelect =
-            field.type === FieldType.SELECT ||
-            field.type === FieldType.MULTI_SELECT;
-          if (!isSelect) {
-            throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-              data: { fieldId: `Field does not accept option values: ${v.fieldId}` },
-            });
-          }
-          const optionExists = field.options.some((o) => o.id === v.optionId);
-          if (!optionExists) {
-            throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
-              data: { fieldId: v.fieldId, optionId: `Unknown option for field: ${v.optionId}` },
-            });
-          }
+        const field = fieldMap.get(v.fieldId);
+        if (!field) {
+          throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+            data: { fieldId: `Unknown or inactive profile field: ${v.fieldId}` },
+          });
         }
+        assertOptionValid(field, v);
+      }
 
         await tx.playerFieldValue.deleteMany({ where: { profileId: existing.id } });
         if (body.values.length > 0) {

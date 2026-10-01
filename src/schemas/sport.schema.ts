@@ -24,10 +24,6 @@ export const optionParamsSchema = z.object({
   optionId: z.uuid("Invalid option id"),
 });
 
-export const metricParamsSchema = z.object({
-  sportId: z.uuid("Invalid sport id"),
-  metricId: z.uuid("Invalid metric id"),
-});
 
 export const metricIdParamSchema = z.object({
   metricId: z.uuid("Invalid metric id"),
@@ -43,12 +39,7 @@ export const createSportSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const updateSportSchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  slug: z.string().trim().min(1).max(120).optional(),
-  description: z.string().trim().max(1000).optional().nullable(),
-  isActive: z.boolean().optional(),
-});
+export const updateSportSchema = createSportSchema.partial()
 
 // ─── SportCategory ───────────────────────────────────────────────────────────
 export const createSportCategorySchema = z.object({
@@ -58,12 +49,7 @@ export const createSportCategorySchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const updateSportCategorySchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  slug: z.string().trim().min(1).max(120).optional(),
-  description: z.string().trim().max(1000).optional().nullable(),
-  isActive: z.boolean().optional(),
-});
+export const updateSportCategorySchema = createSportCategorySchema.partial();
 
 // ─── SportField ──────────────────────────────────────────────────────────────
 export const formulaComponentSchema = z.object({
@@ -99,23 +85,7 @@ export const createSportFieldSchema = z.object({
   ).max(50).optional(),
 });
 
-export const updateSportFieldSchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  slug: z.string().trim().min(1).max(120).optional(),
-  section: z.nativeEnum(FieldSection, { error: "Section must be PROFILE or MATCH" }).optional(),
-  type: z.nativeEnum(FieldType, { error: "Invalid field type" }).optional(),
-  description: z.string().trim().max(1000).optional().nullable(),
-  required: z.boolean().optional(),
-  searchable: z.boolean().optional(),
-  filterable: z.boolean().optional(),
-  sortable: z.boolean().optional(),
-  displayOrder: z.number().int().min(0).max(10000).optional(),
-  isActive: z.boolean().optional(),
-  metricId: z.uuid("Invalid metric id").optional().nullable(),
-  isComputed: z.boolean().optional(),
-  formulaMultiplier: z.number().optional(),
-  formulaComponents: formulaComponentsSchema.optional(),
-});
+export const updateSportFieldSchema = createSportFieldSchema.partial();
 
 // ─── SportFieldOption ────────────────────────────────────────────────────────
 export const createSportFieldOptionSchema = z.object({
@@ -125,12 +95,7 @@ export const createSportFieldOptionSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const updateSportFieldOptionSchema = z.object({
-  label: z.string().trim().min(1).max(100).optional(),
-  value: z.string().trim().min(1).max(120).optional(),
-  isDefault: z.boolean().optional(),
-  isActive: z.boolean().optional(),
-});
+export const updateSportFieldOptionSchema = createSportFieldOptionSchema.partial();
 
 // ─── SportMetric ──────────────────────────────────────────────────────────────
 export const createSportMetricSchema = z.object({
@@ -140,9 +105,4 @@ export const createSportMetricSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const updateSportMetricSchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  slug: z.string().trim().min(1).max(120).optional(),
-  displayOrder: z.number().int().min(0).max(10000).optional(),
-  isActive: z.boolean().optional(),
-});
+export const updateSportMetricSchema = createSportMetricSchema.partial();

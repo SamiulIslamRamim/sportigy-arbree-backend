@@ -16,29 +16,23 @@ const slugify = (value: string): string =>
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const parseBody = <T>(schema: z.ZodType<T>, body: unknown): T => {
-  const parsed = schema.safeParse(body);
+const parseBody = <T>(
+  schema: z.ZodType<T>,
+  input: unknown,
+  code: string = ERROR_CODES.FIELD_VALIDATION_FAILED,
+): T => {
+  const parsed = schema.safeParse(input);
   if (!parsed.success) {
-    throw new AppError(ERROR_CODES.FIELD_VALIDATION_FAILED, { data: parsed.error.flatten() });
+    throw new AppError(code, { data: parsed.error.flatten() });
   }
   return parsed.data;
 };
 
-const parseParams = <T>(schema: z.ZodType<T>, params: unknown): T => {
-  const parsed = schema.safeParse(params);
-  if (!parsed.success) {
-    throw new AppError(ERROR_CODES.FIELD_VALIDATION_FAILED, { data: parsed.error.flatten() });
-  }
-  return parsed.data;
-};
+const parseParams = parseBody;
 
 const parseQueryEnum = <T>(value: unknown, schema: z.ZodType<T>): T | undefined => {
   if (value === undefined) return undefined;
-  const parsed = schema.safeParse(value);
-  if (!parsed.success) {
-    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT);
-  }
-  return parsed.data;
+  return parseBody(schema, value, ERROR_CODES.INVALID_INPUT_FORMAT);
 };
 
 const requireUserId = (req: AuthenticatedRequest): string => {
@@ -63,7 +57,30 @@ const assertFieldExists = async (fieldId: string): Promise<void> => {
   const field = await prisma.sportField.findUnique({ where: { id: fieldId }, select: { id: true } });
   if (!field) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
 };
+const assertActiveSport = async (sportId: string): Promise<void> => {
+  const sport = await prisma.sport.findUnique({
+    where: { id: sportId },
+    select: { id: true, isActive: true },
+  });
+  if (!sport || !sport.isActive) throw new AppError(ERROR_CODES.DB_RECORD_NOT_FOUND);
+};
 
+const assertOptionValid = (
+  field: { type: FieldType; options: { id: string }[] },
+  v: { fieldId: string; optionId: string },
+): void => {
+  const isSelect = field.type === FieldType.SELECT || field.type === FieldType.MULTI_SELECT;
+  if (!isSelect) {
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+      data: { fieldId: v.fieldId, message: "Field does not accept option values" },
+    });
+  }
+  if (!field.options.some((o) => o.id === v.optionId)) {
+    throw new AppError(ERROR_CODES.INVALID_INPUT_FORMAT, {
+      data: { fieldId: v.fieldId, optionId: `Unknown option for field: ${v.optionId}` },
+    });
+  }
+};
 //match-helper
 
 
@@ -217,14 +234,15 @@ const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus, inclu
       sport: { select: { id: true, name: true, slug: true } },
       sportCategory: { select: { id: true, name: true, slug: true } },
       ...teamOrgInclude,
-      ...(includeValues && {
-        values: {
-          include: {
-            field: { select: { id: true, name: true, slug: true, type: true } },
-            option: { select: { id: true, label: true, value: true } },
-          },
-        },
-      }),
+      //todo: includeValues declared but never used (remove this if not needed)
+      // ...(includeValues && {
+      //   values: {
+      //     include: {
+      //       field: { select: { id: true, name: true, slug: true, type: true } },
+      //       option: { select: { id: true, label: true, value: true } },
+      //     },
+      //   },
+      // }),
     },
   });
   return rows.map(derivePlayerMatch);
@@ -234,18 +252,17 @@ const fetchPlayerMatches = async (userId: string, status?: ApprovalStatus, inclu
 // Keep in sync with the SQL team_key CASE in career-stats.controller.ts buildSideCte().
 const normalizeTeamName = (name: string): string => name.trim().toLowerCase();
 
-const teamKeyFor = (input: { teamOrgId?: string | null | undefined; teamName?: string | null | undefined}): string | null => {
-  if (input.teamOrgId) return `org:${input.teamOrgId}`;
-  if (input.teamName) return `name:${normalizeTeamName(input.teamName)}`;
-  return null;
-  }
+const teamKeyFor = (input: { teamOrgId?: string | null | undefined; teamName?: string | null | undefined }): string =>
+  input.teamOrgId
+    ? `org:${input.teamOrgId}`
+    : `name:${normalizeTeamName(input.teamName ?? "")}`;
 
-  
-  
-  
-
-  export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists,assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues, resolveTeamSlot, assertPlayerSideMatchesTeam, teamOrgInclude, derivePlayerMatch, teamKeyFor}
-  
-  
   
   export type TeamResult = { name: string | null; orgId: string | null };
+  
+  
+
+  export { slugify, parseBody, parseParams, parseQueryEnum, assertFieldExists, assertActiveSport, assertOptionValid, assertNonEmptyUpdate, assertSportExists, requireUserId, fetchPlayerMatches, validateMatchValues, resolveTeamSlot, assertPlayerSideMatchesTeam, teamOrgInclude, derivePlayerMatch, normalizeTeamName, teamKeyFor}
+  
+  
+  

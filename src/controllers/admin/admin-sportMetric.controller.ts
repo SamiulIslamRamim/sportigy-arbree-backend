@@ -3,7 +3,6 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import {
   createSportMetricSchema,
   metricIdParamSchema,
-  metricParamsSchema,
   sportParamsSchema,
   updateSportMetricSchema,
 } from "../../schemas/sport.schema.js";
